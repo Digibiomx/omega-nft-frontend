@@ -2,6 +2,7 @@
   "name": "omega-nft-frontend",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://www.digibiosolutions.com/mvp",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -10,14 +11,15 @@
     "ethers": "^6.13.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "omega-nft-frontend/node_modules/.bin/react-scripts start",
-    "build": "omega-nft-frontend/node_modules/.bin/react-scripts build",
-    "test": "omega-nft-frontend/node_modules/.bin/react-scripts test",
-    "eject": "omega-nft-frontend/node_modules/.bin/react-scripts eject"
+    "start": "node_modules/.bin/react-scripts start",
+    "build": "node_modules/.bin/react-scripts build",
+    "test": "node_modules/.bin/react-scripts test",
+    "eject": "node_modules/.bin/react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -36,5 +38,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0",
+    "react-scripts": "^5.0.1"
   }
 }
