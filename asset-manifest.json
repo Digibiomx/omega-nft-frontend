@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/omega-nft-frontend/static/css/main.e6c13ad2.css",
-    "main.js": "/omega-nft-frontend/static/js/main.693feff1.js",
+    "main.js": "/omega-nft-frontend/static/js/main.7aceae1c.js",
     "static/js/453.08f17630.chunk.js": "/omega-nft-frontend/static/js/453.08f17630.chunk.js",
     "index.html": "/omega-nft-frontend/index.html",
     "main.e6c13ad2.css.map": "/omega-nft-frontend/static/css/main.e6c13ad2.css.map",
-    "main.693feff1.js.map": "/omega-nft-frontend/static/js/main.693feff1.js.map",
+    "main.7aceae1c.js.map": "/omega-nft-frontend/static/js/main.7aceae1c.js.map",
     "453.08f17630.chunk.js.map": "/omega-nft-frontend/static/js/453.08f17630.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.693feff1.js"
+    "static/js/main.7aceae1c.js"
   ]
 }
