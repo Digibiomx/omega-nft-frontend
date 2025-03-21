@@ -1,0 +1,1 @@
+(self.webpackChunkomega_nft_frontend=self.webpackChunkomega_nft_frontend||[]).push([[895],{9895:()=>{}}]);
