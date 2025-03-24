@@ -1,120 +1,127 @@
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { EthereumProvider } from "@walletconnect/ethereum-provider";
-import { WalletConnectModal } from "@walletconnect/modal";
+import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect } from "wagmi";
+import { polygonAmoy } from "wagmi/chains";
+import { walletConnect } from "@wagmi/connectors";
+import { createPublicClient, http } from "viem";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // Importa QueryClient y QueryClientProvider
 import omegaNFTABI from "./utils/omegaNFTABI";
 
+// Crea un QueryClient
+const queryClient = new QueryClient();
+
+// Configura las cadenas y el cliente de Wagmi
+const config = createConfig({
+  chains: [polygonAmoy],
+  connectors: [
+    walletConnect({
+      projectId: "d512d1dac86c0440191b4e4f981c58ec", // Tu Project ID de WalletConnect
+      showQrModal: true,
+    }),
+  ],
+  transports: {
+    [polygonAmoy.id]: http("https://rpc-amoy.polygon.technology/"),
+  },
+});
+
+// Crea un cliente público para interactuar con la blockchain
+const viemClient = createPublicClient({
+  chain: polygonAmoy,
+  transport: http("https://rpc-amoy.polygon.technology/"),
+});
+
 function App() {
-  const [account, setAccount] = useState(null);
+  const { address, isConnected } = useAccount();
+  const { connect, connectors: availableConnectors } = useConnect();
+  const { disconnect } = useDisconnect();
   const [contract, setContract] = useState(null);
   const [nfts, setNfts] = useState([]);
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [provider, setProvider] = useState(null);
 
-  // Configura WalletConnect Modal
-  const walletConnectModal = new WalletConnectModal({
-    projectId: "d512d1dac86c0440191b4e4f981c58ec",
-    themeMode: "dark",
-    themeVariables: {
-      "--wcm-z-index": "1000",
-    },
-  });
+  useEffect(() => {
+    if (isConnected && address) {
+      const initContract = async () => {
+        try {
+          // Configura el contrato usando viem
+          const contractAddress = "0xCc9FeC4A298D2320748116F24d859c91455f7245";
+          setContract({ address: contractAddress, abi: omegaNFTABI });
+          await loadNfts({ address: contractAddress, abi: omegaNFTABI }, address);
+        } catch (error) {
+          console.error("Error al inicializar el contrato:", error);
+          setErrorMessage("Error al inicializar el contrato: " + error.message);
+        }
+      };
+      initContract();
+    }
+  }, [isConnected, address]);
 
   const connectWallet = async () => {
     setIsConnecting(true);
     setErrorMessage(null);
 
     try {
-      // Inicializa WalletConnect
-      const wcProvider = await EthereumProvider.init({
-        projectId: "d512d1dac86c0440191b4e4f981c58ec",
-        chains: [80002], // ID de la red Polygon Amoy
-        optionalChains: [80002],
-        showQrModal: false, // No mostramos el modal de QR directamente, lo manejamos con WalletConnectModal
-        methods: ["eth_requestAccounts", "eth_sendTransaction", "eth_sign"],
-        events: ["chainChanged", "accountsChanged"],
-        metadata: {
-          name: "OmegaNFT",
-          description: "Frontend for OmegaNFT project",
-          url: "https://www.digibiosolutions.com/omega-nft-frontend/",
-          icons: ["https://www.digibiosolutions.com/omega-nfts-metadata/omega-nfts-metadata/images/0.png"],
-        },
-      });
-
-      // Abre el modal de WalletConnect para conectar
-      await wcProvider.connect({
-        modal: walletConnectModal,
-      });
-
-      // Una vez conectado, obtenemos las cuentas
-      const accounts = await wcProvider.request({ method: "eth_requestAccounts" });
-      const ethersProvider = new ethers.BrowserProvider(wcProvider);
-      const signer = await ethersProvider.getSigner();
-      const contractAddress = "0xCc9FeC4A298D2320748116F24d859c91455f7245";
-      const contract = new ethers.Contract(contractAddress, omegaNFTABI, signer);
-
-      setProvider(wcProvider);
-      setContract(contract);
-      setAccount(accounts[0]);
-      console.log("Conectado a:", accounts[0]);
-      await loadNfts(contract, accounts[0]);
+      // Conecta usando el conector de WalletConnect
+      await connect({ connector: availableConnectors[0] });
     } catch (error) {
       console.error("Error al conectar:", error);
-      setErrorMessage("Error al conectar con la wallet. Revisa la consola para más detalles.");
+      setErrorMessage("Error al conectar con la wallet: " + error.message);
     } finally {
       setIsConnecting(false);
     }
   };
 
-  // Escuchar cambios de cuenta y red
-  useEffect(() => {
-    if (provider) {
-      provider.on("accountsChanged", (accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          if (contract) {
-            loadNfts(contract, accounts[0]);
-          }
-        } else {
-          setAccount(null);
-          setNfts([]);
-          setProvider(null);
-          setContract(null);
-        }
-      });
-
-      provider.on("chainChanged", () => {
-        window.location.reload();
-      });
-
-      // Limpieza al desmontar el componente
-      return () => {
-        provider.disconnect();
-      };
-    }
-  }, [provider, contract]);
-
   const loadNfts = async (contract, owner) => {
     if (contract && owner) {
       try {
-        const filter = contract.filters.Transfer(null, owner);
-        const events = await contract.queryFilter(filter, 0, "latest");
-        console.log("Eventos Transfer encontrados:", events.length);
-        events.forEach((event, index) => {
+        // Usa viem para consultar eventos
+        const logs = await viemClient.getLogs({
+          address: contract.address,
+          event: {
+            type: "event",
+            name: "Transfer",
+            inputs: [
+              { type: "address", indexed: true, name: "from" },
+              { type: "address", indexed: true, name: "to" },
+              { type: "uint256", indexed: true, name: "tokenId" },
+            ],
+          },
+          fromBlock: 0n,
+          toBlock: "latest",
+        });
+
+        const transferEvents = logs
+            .filter((log) => log.args.to.toLowerCase() === owner.toLowerCase())
+            .map((log) => ({
+              args: {
+                tokenId: log.args.tokenId,
+              },
+            }));
+
+        console.log("Eventos Transfer encontrados:", transferEvents.length);
+        transferEvents.forEach((event, index) => {
           console.log(`Evento ${index}: Token ID ${event.args.tokenId.toString()}`);
         });
 
         const nftsList = [];
-        for (let i = 0; i < events.length; i++) {
-          const event = events[i];
+        for (let i = 0; i < transferEvents.length; i++) {
+          const event = transferEvents[i];
           const tokenId = event.args.tokenId.toString();
           console.log(`Procesando token ID ${tokenId}...`);
           try {
-            let tokenURI = await contract.tokenURI(tokenId);
+            const tokenURI = await viemClient.readContract({
+              address: contract.address,
+              abi: contract.abi,
+              functionName: "tokenURI",
+              args: [tokenId],
+            });
             console.log(`Token ID ${tokenId} URI: ${tokenURI}`);
 
-            const tokenOwner = await contract.ownerOf(tokenId);
+            const tokenOwner = await viemClient.readContract({
+              address: contract.address,
+              abi: contract.abi,
+              functionName: "ownerOf",
+              args: [tokenId],
+            });
             console.log(`Token ID ${tokenId} existe y pertenece a: ${tokenOwner}`);
 
             const response = await fetch(tokenURI);
@@ -153,12 +160,19 @@ function App() {
   };
 
   const mintNFT = async () => {
-    if (contract) {
+    if (contract && address) {
       try {
-        const tx = await contract.mint({ value: ethers.parseEther("0.01") });
-        await tx.wait();
+        const { request } = await viemClient.simulateContract({
+          account: address,
+          address: contract.address,
+          abi: contract.abi,
+          functionName: "mint",
+          value: BigInt("10000000000000000"), // 0.01 MATIC en wei
+        });
+        const hash = await viemClient.writeContract(request);
+        await viemClient.waitForTransactionReceipt({ hash });
         alert("NFT minteado con éxito!");
-        await loadNfts(contract, account);
+        await loadNfts(contract, address);
       } catch (error) {
         console.error("Error al mintear:", error);
         alert("Error al mintear el NFT. Revisa la consola.");
@@ -166,6 +180,12 @@ function App() {
     } else {
       setErrorMessage("Por favor, conecta tu wallet para mintear un NFT.");
     }
+  };
+
+  const disconnectWallet = async () => {
+    await disconnect();
+    setContract(null);
+    setNfts([]);
   };
 
   return (
@@ -193,16 +213,38 @@ function App() {
         >
           OmegaNFT
         </h1>
-        {account ? (
-            <p
-                style={{
-                  fontSize: "1.2rem",
-                  marginBottom: "30px",
-                  color: "#cccccc",
-                }}
-            >
-              Cuenta conectada: {account}
-            </p>
+        {isConnected ? (
+            <>
+              <p
+                  style={{
+                    fontSize: "1.2rem",
+                    marginBottom: "30px",
+                    color: "#cccccc",
+                  }}
+              >
+                Cuenta conectada: {address}
+              </p>
+              <button
+                  onClick={disconnectWallet}
+                  style={{
+                    padding: "12px 30px",
+                    fontSize: "1.1rem",
+                    fontWeight: "bold",
+                    color: "#ffffff",
+                    backgroundColor: "#ff5555",
+                    border: "none",
+                    borderRadius: "25px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    boxShadow: "0 4px 15px rgba(255, 85, 85, 0.3)",
+                    marginBottom: "30px",
+                  }}
+                  onMouseOver={(e) => (e.target.style.backgroundColor = "#cc4444")}
+                  onMouseOut={(e) => (e.target.style.backgroundColor = "#ff5555")}
+              >
+                Desconectar
+              </button>
+            </>
         ) : (
             <button
                 onClick={connectWallet}
@@ -237,7 +279,7 @@ function App() {
               {errorMessage}
             </p>
         )}
-        {account && (
+        {isConnected && (
             <button
                 onClick={mintNFT}
                 disabled={!contract}
@@ -351,4 +393,12 @@ function App() {
   );
 }
 
-export default App;
+export default function WrappedApp() {
+  return (
+      <WagmiConfig config={config}>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </WagmiConfig>
+  );
+}
