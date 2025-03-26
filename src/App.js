@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
-import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect } from "wagmi";
+import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect, useWalletClient, useChainId } from "wagmi";
 import { polygonAmoy } from "wagmi/chains";
 import { walletConnect } from "@wagmi/connectors";
 import { createPublicClient, http } from "viem";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // Importa QueryClient y QueryClientProvider
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import omegaNFTABI from "./utils/omegaNFTABI";
 
-// Crea un QueryClient
 const queryClient = new QueryClient();
 
-// Configura las cadenas y el cliente de Wagmi
 const config = createConfig({
   chains: [polygonAmoy],
   connectors: [
     walletConnect({
-      projectId: "d512d1dac86c0440191b4e4f981c58ec", // Tu Project ID de WalletConnect
+      projectId: "d512d1dac86c0440191b4e4f981c58ec",
       showQrModal: true,
     }),
   ],
@@ -23,7 +21,6 @@ const config = createConfig({
   },
 });
 
-// Crea un cliente público para interactuar con la blockchain
 const viemClient = createPublicClient({
   chain: polygonAmoy,
   transport: http("https://rpc-amoy.polygon.technology/"),
@@ -33,6 +30,8 @@ function App() {
   const { address, isConnected } = useAccount();
   const { connect, connectors: availableConnectors } = useConnect();
   const { disconnect } = useDisconnect();
+  const chainId = useChainId(); // Reemplazamos useNetwork por useChainId
+  const { data: walletClient } = useWalletClient();
   const [contract, setContract] = useState(null);
   const [nfts, setNfts] = useState([]);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -40,9 +39,12 @@ function App() {
 
   useEffect(() => {
     if (isConnected && address) {
+      if (chainId !== polygonAmoy.id) {
+        setErrorMessage(`Por favor, cambia a la red Polygon Amoy (chain ID: ${polygonAmoy.id}).`);
+        return;
+      }
       const initContract = async () => {
         try {
-          // Configura el contrato usando viem
           const contractAddress = "0xCc9FeC4A298D2320748116F24d859c91455f7245";
           setContract({ address: contractAddress, abi: omegaNFTABI });
           await loadNfts({ address: contractAddress, abi: omegaNFTABI }, address);
@@ -53,14 +55,13 @@ function App() {
       };
       initContract();
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, chainId]);
 
   const connectWallet = async () => {
     setIsConnecting(true);
     setErrorMessage(null);
 
     try {
-      // Conecta usando el conector de WalletConnect
       await connect({ connector: availableConnectors[0] });
     } catch (error) {
       console.error("Error al conectar:", error);
@@ -73,7 +74,6 @@ function App() {
   const loadNfts = async (contract, owner) => {
     if (contract && owner) {
       try {
-        // Usa viem para consultar eventos
         const logs = await viemClient.getLogs({
           address: contract.address,
           event: {
@@ -160,22 +160,26 @@ function App() {
   };
 
   const mintNFT = async () => {
-    if (contract && address) {
+    if (contract && address && walletClient) {
+      if (chainId !== polygonAmoy.id) {
+        setErrorMessage(`Por favor, cambia a la red Polygon Amoy (chain ID: ${polygonAmoy.id}).`);
+        return;
+      }
       try {
         const { request } = await viemClient.simulateContract({
           account: address,
           address: contract.address,
           abi: contract.abi,
           functionName: "mint",
-          value: BigInt("10000000000000000"), // 0.01 MATIC en wei
+          value: BigInt("10000000000000000"),
         });
-        const hash = await viemClient.writeContract(request);
+        const hash = await walletClient.writeContract(request);
         await viemClient.waitForTransactionReceipt({ hash });
         alert("NFT minteado con éxito!");
         await loadNfts(contract, address);
       } catch (error) {
         console.error("Error al mintear:", error);
-        alert("Error al mintear el NFT. Revisa la consola.");
+        alert("Error al mintear el NFT: " + error.message);
       }
     } else {
       setErrorMessage("Por favor, conecta tu wallet para mintear un NFT.");
@@ -213,6 +217,15 @@ function App() {
         >
           OmegaNFT
         </h1>
+        <p
+            style={{
+              fontSize: "1rem",
+              color: "#ff5555",
+              marginBottom: "20px",
+            }}
+        >
+          Para una mejor experiencia en móviles, abre esta página en el navegador integrado de MetaMask.
+        </p>
         {isConnected ? (
             <>
               <p
@@ -282,7 +295,7 @@ function App() {
         {isConnected && (
             <button
                 onClick={mintNFT}
-                disabled={!contract}
+                disabled={!contract || !walletClient}
                 style={{
                   padding: "12px 30px",
                   fontSize: "1.1rem",
