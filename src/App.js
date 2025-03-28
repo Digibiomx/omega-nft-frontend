@@ -89,6 +89,7 @@ function App() {
           toBlock: "latest",
         });
 
+        // Filtra los eventos Transfer para encontrar los tokens que fueron enviados a la wallet conectada
         const transferEvents = logs
             .filter((log) => log.args.to.toLowerCase() === owner.toLowerCase())
             .map((log) => ({
@@ -108,6 +109,18 @@ function App() {
           const tokenId = event.args.tokenId.toString();
           console.log(`Procesando token ID ${tokenId}...`);
           try {
+            // Verifica si la wallet conectada sigue siendo la dueña del NFT
+            const tokenOwner = await viemClient.readContract({
+              address: contract.address,
+              abi: contract.abi,
+              functionName: "ownerOf",
+              args: [tokenId],
+            });
+            if (tokenOwner.toLowerCase() !== owner.toLowerCase()) {
+              console.log(`Token ID ${tokenId} ya no pertenece a ${owner}, pertenece a ${tokenOwner}`);
+              continue; // Si la wallet conectada no es la dueña, salta este NFT
+            }
+
             const tokenURI = await viemClient.readContract({
               address: contract.address,
               abi: contract.abi,
@@ -115,14 +128,6 @@ function App() {
               args: [tokenId],
             });
             console.log(`Token ID ${tokenId} URI: ${tokenURI}`);
-
-            const tokenOwner = await viemClient.readContract({
-              address: contract.address,
-              abi: contract.abi,
-              functionName: "ownerOf",
-              args: [tokenId],
-            });
-            console.log(`Token ID ${tokenId} existe y pertenece a: ${tokenOwner}`);
 
             const response = await fetch(tokenURI);
             if (!response.ok) {
