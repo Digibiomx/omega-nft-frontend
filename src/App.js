@@ -30,7 +30,7 @@ function App() {
   const { address, isConnected } = useAccount();
   const { connect, connectors: availableConnectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const chainId = useChainId(); // Reemplazamos useNetwork por useChainId
+  const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
   const [contract, setContract] = useState(null);
   const [nfts, setNfts] = useState([]);
@@ -45,7 +45,7 @@ function App() {
       }
       const initContract = async () => {
         try {
-          const contractAddress = "0xCc9FeC4A298D2320748116F24d859c91455f7245";
+          const contractAddress = "0x38a2550FB656DDAaDB478B3C2258E48866C91b7f";
           setContract({ address: contractAddress, abi: omegaNFTABI });
           await loadNfts({ address: contractAddress, abi: omegaNFTABI }, address);
         } catch (error) {
@@ -134,6 +134,7 @@ function App() {
             console.log(`Parsed metadata for token ${tokenId}:`, JSON.stringify(metadata));
             const image = metadata.image || "https://via.placeholder.com/150";
             const name = metadata.name || `NFT ${tokenId}`;
+            const attributes = metadata.attributes || [];
             console.log(`Image for token ${tokenId}:`, image);
             console.log(`Name for token ${tokenId}:`, name);
             const nft = {
@@ -141,6 +142,7 @@ function App() {
               uri: tokenURI,
               image,
               name,
+              attributes,
             };
             console.log(`NFT creado para token ${tokenId}:`, nft);
             nftsList.push(nft);
@@ -159,37 +161,16 @@ function App() {
     }
   };
 
-  const mintNFT = async () => {
-    if (contract && address && walletClient) {
-      if (chainId !== polygonAmoy.id) {
-        setErrorMessage(`Por favor, cambia a la red Polygon Amoy (chain ID: ${polygonAmoy.id}).`);
-        return;
-      }
-      try {
-        const { request } = await viemClient.simulateContract({
-          account: address,
-          address: contract.address,
-          abi: contract.abi,
-          functionName: "mint",
-          value: BigInt("10000000000000000"),
-        });
-        const hash = await walletClient.writeContract(request);
-        await viemClient.waitForTransactionReceipt({ hash });
-        alert("NFT minteado con éxito!");
-        await loadNfts(contract, address);
-      } catch (error) {
-        console.error("Error al mintear:", error);
-        alert("Error al mintear el NFT: " + error.message);
-      }
-    } else {
-      setErrorMessage("Por favor, conecta tu wallet para mintear un NFT.");
-    }
-  };
-
   const disconnectWallet = async () => {
     await disconnect();
     setContract(null);
     setNfts([]);
+  };
+
+  const registerForEvent = (tokenId, eventName) => {
+    // Aquí podrías implementar una llamada a un backend para registrar al usuario
+    // Por ahora, mostramos un mensaje de confirmación
+    alert(`Registro para ${eventName} con el NFT #${tokenId} enviado con éxito!`);
   };
 
   return (
@@ -292,29 +273,6 @@ function App() {
               {errorMessage}
             </p>
         )}
-        {isConnected && (
-            <button
-                onClick={mintNFT}
-                disabled={!contract || !walletClient}
-                style={{
-                  padding: "12px 30px",
-                  fontSize: "1.1rem",
-                  fontWeight: "bold",
-                  color: "#ffffff",
-                  backgroundColor: "#00aaff",
-                  border: "none",
-                  borderRadius: "25px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 4px 15px rgba(0, 170, 255, 0.3)",
-                  marginBottom: "40px",
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#0088cc")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#00aaff")}
-            >
-              Mintear NFT (0.01 MATIC)
-            </button>
-        )}
         <h2
             style={{
               fontSize: "2rem",
@@ -322,7 +280,7 @@ function App() {
               color: "#00aaff",
             }}
         >
-          Mis NFTs
+          Mis Relojes
         </h2>
         <div
             style={{
@@ -362,7 +320,7 @@ function App() {
                 >
                   <img
                       src={nft.image}
-                      alt={`NFT ${nft.tokenId}`}
+                      alt={`Reloj ${nft.tokenId}`}
                       style={{
                         width: "100%",
                         height: "auto",
@@ -385,10 +343,28 @@ function App() {
                     style={{
                       fontSize: "0.9rem",
                       color: "#cccccc",
+                      marginBottom: "5px",
+                    }}
+                >
+                  Modelo: {nft.attributes.find(attr => attr.trait_type === "Model")?.value || "N/A"}
+                </p>
+                <p
+                    style={{
+                      fontSize: "0.9rem",
+                      color: "#cccccc",
+                      marginBottom: "5px",
+                    }}
+                >
+                  Número de serie: {nft.attributes.find(attr => attr.trait_type === "Serial Number")?.value || "N/A"}
+                </p>
+                <p
+                    style={{
+                      fontSize: "0.9rem",
+                      color: "#cccccc",
                       marginBottom: "10px",
                     }}
                 >
-                  Token ID: {nft.tokenId}
+                  Fecha de fabricación: {nft.attributes.find(attr => attr.trait_type === "Manufacture Date")?.value || "N/A"}
                 </p>
                 <p
                     style={{
@@ -397,11 +373,74 @@ function App() {
                       wordBreak: "break-all",
                     }}
                 >
-                  URI: {nft.uri}
+                  Token ID: {nft.tokenId}
                 </p>
               </div>
           ))}
         </div>
+        {isConnected && nfts.length > 0 && (
+            <div
+                style={{
+                  marginTop: "40px",
+                  maxWidth: "1200px",
+                  width: "100%",
+                }}
+            >
+              <h2
+                  style={{
+                    fontSize: "2rem",
+                    marginBottom: "30px",
+                    color: "#00aaff",
+                  }}
+              >
+                Experiencias Exclusivas
+              </h2>
+              {nfts.map((nft, index) => {
+                const eventAccess = nft.attributes.find(attr => attr.trait_type === "Event Access")?.value;
+                return eventAccess ? (
+                    <div
+                        key={index}
+                        style={{
+                          backgroundColor: "#2a2a4a",
+                          borderRadius: "15px",
+                          padding: "20px",
+                          marginBottom: "20px",
+                          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+                        }}
+                    >
+                      <p
+                          style={{
+                            fontSize: "1rem",
+                            color: "#cccccc",
+                            marginBottom: "10px",
+                          }}
+                      >
+                        Tu reloj #{nft.tokenId} te da acceso a: {eventAccess}
+                      </p>
+                      <button
+                          onClick={() => registerForEvent(nft.tokenId, eventAccess)}
+                          style={{
+                            padding: "10px 20px",
+                            fontSize: "1rem",
+                            fontWeight: "bold",
+                            color: "#ffffff",
+                            backgroundColor: "#00aaff",
+                            border: "none",
+                            borderRadius: "25px",
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            boxShadow: "0 4px 15px rgba(0, 170, 255, 0.3)",
+                          }}
+                          onMouseOver={(e) => (e.target.style.backgroundColor = "#0088cc")}
+                          onMouseOut={(e) => (e.target.style.backgroundColor = "#00aaff")}
+                      >
+                        Registrarse para el evento
+                      </button>
+                    </div>
+                ) : null;
+              })}
+            </div>
+        )}
       </div>
   );
 }

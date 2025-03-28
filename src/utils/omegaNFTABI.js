@@ -323,7 +323,28 @@ const omegaNFTABI = [
         "type": "function"
     },
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "model",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "serialNumber",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "manufactureDate",
+                "type": "string"
+            }
+        ],
         "name": "mint",
         "outputs": [
             {
@@ -332,7 +353,7 @@ const omegaNFTABI = [
                 "type": "uint256"
             }
         ],
-        "stateMutability": "payable",
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -472,6 +493,24 @@ const omegaNFTABI = [
     {
         "inputs": [
             {
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "newTokenURI",
+                "type": "string"
+            }
+        ],
+        "name": "setTokenURI",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "bytes4",
                 "name": "interfaceId",
                 "type": "bytes4"
@@ -554,6 +593,35 @@ const omegaNFTABI = [
         "name": "transferOwnership",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "watchDetails",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "model",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "serialNumber",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "manufactureDate",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
