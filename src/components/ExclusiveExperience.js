@@ -12,7 +12,7 @@ const ExclusiveExperience = ({ nft, registerForEvent }) => {
                 <span className="experience-icon">🏆</span>
                 <h3 className="experience-title">Experiencia Exclusiva</h3>
             </div>
-            <p className="experience-text">Tu reloj #{nft.tokenId} te da acceso a: {eventAccess}</p>
+            <p className="experience-text">Tu NFT #{nft.tokenId} te da acceso a: {eventAccess}</p>
             <button
                 onClick={() => registerForEvent(nft.tokenId, eventAccess)}
                 className="event-button"

@@ -1,5 +1,5 @@
 // src/App.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect, useWalletClient, useChainId } from "wagmi";
 import { polygonAmoy } from "wagmi/chains";
 import { walletConnect } from "@wagmi/connectors";
@@ -10,7 +10,19 @@ import WalletConnect from "./components/WalletConnect";
 import NFTCard from "./components/NFTCard";
 import ExclusiveExperience from "./components/ExclusiveExperience";
 import logo from "./assets/logo.webp";
+import Particles from "react-particles";
+import { loadFull } from "tsparticles";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import "./App.css";
+
+// Imágenes para el carrusel (puedes reemplazarlas con imágenes reales)
+const carouselImages = [
+  "https://ipfs.io/ipfs/bafkreib2jijsffefwnksnbp2bjtc2ques7vondinbqipatx66c5ynnpgem",
+  "https://ipfs.io/ipfs/bafkreiehgj3eidq5l2ll5slegy2dl6mx4o4srznhus6wcyd4eboky4ybbq",
+  "https://ipfs.io/ipfs/bafkreiapq2e7ios4zzqu4b5odei2woauo3kryvkn6sclwlfjf5z67c4ifu",
+];
 
 const queryClient = new QueryClient();
 
@@ -45,6 +57,17 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("nfts");
+  const [email, setEmail] = useState("");
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [eventHistory, setEventHistory] = useState([]);
+
+  const particlesInit = useCallback(async (engine) => {
+    await loadFull(engine);
+  }, []);
+
+  const particlesLoaded = useCallback(async (container) => {
+    console.log("Particles loaded:", container);
+  }, []);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -83,6 +106,8 @@ function App() {
     }
   };
 
+  // src/App.js (dentro de la función loadNfts)
+  // src/App.js (dentro de la función loadNfts)
   const loadNfts = async (contract, owner) => {
     if (contract && owner) {
       try {
@@ -150,14 +175,17 @@ function App() {
             const image = metadata.image || "https://via.placeholder.com/150";
             const name = metadata.name || `NFT ${tokenId}`;
             const attributes = metadata.attributes || [];
-            console.log(`Image for token ${tokenId}:`, image);
-            console.log(`Name for token ${tokenId}:`, name);
+            console.log(`Attributes for token ${tokenId}:`, attributes); // Log para depurar los atributos
+            const hasEvents = attributes.some(attr => attr.trait_type === "Event Access" && attr.value);
+            const articleType = attributes.find(attr => attr.trait_type === "Article")?.value || "Desconocido";
+            console.log(`Article type for token ${tokenId}: ${articleType}`); // Log para depurar el tipo de artículo
             const nft = {
               tokenId,
               uri: tokenURI,
               image,
               name,
               attributes,
+              hasEvents,
             };
             console.log(`NFT creado para token ${tokenId}:`, nft);
             nftsList.push(nft);
@@ -184,6 +212,12 @@ function App() {
   };
 
   const registerForEvent = (tokenId, eventName) => {
+    const newEvent = {
+      tokenId,
+      eventName,
+      date: new Date().toLocaleString(),
+    };
+    setEventHistory([...eventHistory, newEvent]);
     alert(`Registro para ${eventName} con el NFT #${tokenId} enviado con éxito!`);
   };
 
@@ -195,8 +229,36 @@ function App() {
     setIsMenuOpen(false);
   };
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert("Dirección copiada al portapapeles!");
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
+
+  const saveEmail = () => {
+    setIsEditingEmail(false);
+    alert("Correo electrónico guardado con éxito!");
+  };
+
   const abbreviatedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
 
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    arrows: true,
+    prevArrow: <button className="slick-prev">←</button>,
+    nextArrow: <button className="slick-next">→</button>,
+  };
+
+  // src/App.js (el return principal)
   return (
       <div className="app-container">
         {isConnected && (
@@ -217,7 +279,7 @@ function App() {
                         }}
                         className="menu-link"
                     >
-                      Mis Relojes
+                      Mis NFTs
                     </button>
                   </li>
                   <li>
@@ -229,6 +291,17 @@ function App() {
                         className="menu-link"
                     >
                       Experiencias Exclusivas
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                        onClick={() => {
+                          setActiveTab("profile");
+                          setIsMenuOpen(false);
+                        }}
+                        className="menu-link"
+                    >
+                      Perfil
                     </button>
                   </li>
                   <li>
@@ -252,8 +325,95 @@ function App() {
         )}
         {!isConnected ? (
             <div className="welcome-screen">
+              <Particles
+                  id="tsparticles"
+                  init={particlesInit}
+                  loaded={particlesLoaded}
+                  options={{
+                    background: {
+                      color: {
+                        value: "transparent",
+                      },
+                    },
+                    fpsLimit: 60,
+                    interactivity: {
+                      events: {
+                        onClick: {
+                          enable: true,
+                          mode: "push",
+                        },
+                        onHover: {
+                          enable: true,
+                          mode: "repulse",
+                        },
+                        resize: true,
+                      },
+                      modes: {
+                        push: {
+                          quantity: 4,
+                        },
+                        repulse: {
+                          distance: 200,
+                          duration: 0.4,
+                        },
+                      },
+                    },
+                    particles: {
+                      color: {
+                        value: "#00aaff",
+                      },
+                      links: {
+                        color: "#00aaff",
+                        distance: 150,
+                        enable: true,
+                        opacity: 0.5,
+                        width: 1,
+                      },
+                      collisions: {
+                        enable: true,
+                      },
+                      move: {
+                        direction: "none",
+                        enable: true,
+                        outModes: {
+                          default: "bounce",
+                        },
+                        random: false,
+                        speed: 2,
+                        straight: false,
+                      },
+                      number: {
+                        density: {
+                          enable: true,
+                          area: 800,
+                        },
+                        value: 80,
+                      },
+                      opacity: {
+                        value: 0.5,
+                      },
+                      shape: {
+                        type: "circle",
+                      },
+                      size: {
+                        value: { min: 1, max: 5 },
+                      },
+                    },
+                    detectRetina: true,
+                  }}
+                  className="particles"
+              />
               <img src={logo} alt="Afizionados Logo" className="logo" />
               <p className="tagline">La memorabilidad deportiva de tu equipo favorito, ahora en formato digital</p>
+              <div className="carousel-container">
+                <Slider {...sliderSettings}>
+                  {carouselImages.map((image, index) => (
+                      <div key={index}>
+                        <img src={image} alt={`NFT ${index + 1}`} className="carousel-image" />
+                      </div>
+                  ))}
+                </Slider>
+              </div>
               <WalletConnect
                   isConnected={isConnected}
                   address={address}
@@ -278,7 +438,7 @@ function App() {
                     className={`tab ${activeTab === "nfts" ? "active" : ""}`}
                     onClick={() => setActiveTab("nfts")}
                 >
-                  Mis Relojes
+                  Mis NFTs
                 </button>
                 <button
                     className={`tab ${activeTab === "experiences" ? "active" : ""}`}
@@ -286,14 +446,20 @@ function App() {
                 >
                   Experiencias Exclusivas
                 </button>
+                <button
+                    className={`tab ${activeTab === "profile" ? "active" : ""}`}
+                    onClick={() => setActiveTab("profile")}
+                >
+                  Perfil
+                </button>
               </div>
               {activeTab === "nfts" && (
                   <section id="my-nfts">
                     {isLoading ? (
-                        <p className="loading-state">Cargando tus relojes...</p>
+                        <p className="loading-state">Cargando tus NFTs...</p>
                     ) : nfts.length === 0 ? (
                         <p className="empty-state">
-                          No tienes relojes en tu colección. ¡Explora cómo obtener uno en{" "}
+                          No tienes NFTs en tu colección. ¡Explora cómo obtener uno en{" "}
                           <a href="https://afizionados.com/" className="info-link">Afizionados.com</a>!
                         </p>
                     ) : (
@@ -311,7 +477,7 @@ function App() {
                         <p className="loading-state">Cargando tus experiencias...</p>
                     ) : nfts.length === 0 ? (
                         <p className="empty-state">
-                          No tienes experiencias disponibles. ¡Obtén un reloj para acceder a eventos exclusivos!
+                          No tienes experiencias disponibles. ¡Obtén un NFT para acceder a eventos exclusivos!
                         </p>
                     ) : (
                         <div className="experience-section">
@@ -323,6 +489,83 @@ function App() {
                               />
                           ))}
                         </div>
+                    )}
+                  </section>
+              )}
+              {activeTab === "profile" && (
+                  <section id="profile">
+                    <h2 className="profile-title">Perfil de usuario</h2>
+                    <div className="profile-info">
+                      <div className="profile-item">
+                        <span className="profile-label">Dirección de Wallet:</span>
+                        <div className="profile-value">
+                          <span>{abbreviatedAddress}</span>
+                          <button
+                              className="copy-button"
+                              onClick={() => copyToClipboard(address)}
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="profile-item">
+                        <span className="profile-label">Correo Electrónico:</span>
+                        {isEditingEmail ? (
+                            <div className="profile-value">
+                              <input
+                                  type="email"
+                                  value={email}
+                                  onChange={handleEmailChange}
+                                  className="email-input"
+                                  placeholder="Ingresa tu correo"
+                              />
+                              <button className="save-button" onClick={saveEmail}>
+                                Guardar
+                              </button>
+                            </div>
+                        ) : (
+                            <div className="profile-value">
+                              <span>{email || "No especificado"}</span>
+                              <button
+                                  className="edit-button"
+                                  onClick={() => setIsEditingEmail(true)}
+                              >
+                                Editar
+                              </button>
+                            </div>
+                        )}
+                      </div>
+                    </div>
+                    <h3 className="profile-subtitle">Tus NFTs</h3>
+                    {nfts.length === 0 ? (
+                        <p className="empty-state">No tienes NFTs en tu colección.</p>
+                    ) : (
+                        <div className="nft-grid profile-nft-grid">
+                          {nfts.map((nft, index) => (
+                              <div key={index} className="profile-nft-item">
+                                <img
+                                    src={nft.image}
+                                    alt={`NFT ${nft.tokenId}`}
+                                    className="profile-nft-image"
+                                />
+                                <p className="profile-nft-name">{nft.name}</p>
+                              </div>
+                          ))}
+                        </div>
+                    )}
+                    <h3 className="profile-subtitle">Historial de Eventos</h3>
+                    {eventHistory.length === 0 ? (
+                        <p className="empty-state">No te has registrado en ningún evento aún.</p>
+                    ) : (
+                        <ul className="event-history">
+                          {eventHistory.map((event, index) => (
+                              <li key={index} className="event-history-item">
+                                <span>Evento: {event.eventName}</span>
+                                <span>Token ID: {event.tokenId}</span>
+                                <span>Fecha: {event.date}</span>
+                              </li>
+                          ))}
+                        </ul>
                     )}
                   </section>
               )}
