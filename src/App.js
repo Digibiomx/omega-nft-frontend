@@ -1,3 +1,4 @@
+// src/App.js
 import { useState, useEffect } from "react";
 import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect, useWalletClient, useChainId } from "wagmi";
 import { polygonAmoy } from "wagmi/chains";
@@ -5,6 +6,11 @@ import { walletConnect } from "@wagmi/connectors";
 import { createPublicClient, http } from "viem";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import omegaNFTABI from "./utils/omegaNFTABI";
+import WalletConnect from "./components/WalletConnect";
+import NFTCard from "./components/NFTCard";
+import ExclusiveExperience from "./components/ExclusiveExperience";
+import logo from "./assets/logo.webp";
+import "./App.css";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +41,10 @@ function App() {
   const [contract, setContract] = useState(null);
   const [nfts, setNfts] = useState([]);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("nfts");
 
   useEffect(() => {
     if (isConnected && address) {
@@ -45,12 +54,15 @@ function App() {
       }
       const initContract = async () => {
         try {
+          setIsLoading(true);
           const contractAddress = "0x38a2550FB656DDAaDB478B3C2258E48866C91b7f";
           setContract({ address: contractAddress, abi: omegaNFTABI });
           await loadNfts({ address: contractAddress, abi: omegaNFTABI }, address);
         } catch (error) {
           console.error("Error al inicializar el contrato:", error);
           setErrorMessage("Error al inicializar el contrato: " + error.message);
+        } finally {
+          setIsLoading(false);
         }
       };
       initContract();
@@ -89,7 +101,6 @@ function App() {
           toBlock: "latest",
         });
 
-        // Filtra los eventos Transfer para encontrar los tokens que fueron enviados a la wallet conectada
         const transferEvents = logs
             .filter((log) => log.args.to.toLowerCase() === owner.toLowerCase())
             .map((log) => ({
@@ -109,7 +120,6 @@ function App() {
           const tokenId = event.args.tokenId.toString();
           console.log(`Procesando token ID ${tokenId}...`);
           try {
-            // Verifica si la wallet conectada sigue siendo la dueña del NFT
             const tokenOwner = await viemClient.readContract({
               address: contract.address,
               abi: contract.abi,
@@ -118,7 +128,7 @@ function App() {
             });
             if (tokenOwner.toLowerCase() !== owner.toLowerCase()) {
               console.log(`Token ID ${tokenId} ya no pertenece a ${owner}, pertenece a ${tokenOwner}`);
-              continue; // Si la wallet conectada no es la dueña, salta este NFT
+              continue;
             }
 
             const tokenURI = await viemClient.readContract({
@@ -170,282 +180,161 @@ function App() {
     await disconnect();
     setContract(null);
     setNfts([]);
+    setIsMenuOpen(false);
   };
 
   const registerForEvent = (tokenId, eventName) => {
-    // Aquí podrías implementar una llamada a un backend para registrar al usuario
-    // Por ahora, mostramos un mensaje de confirmación
     alert(`Registro para ${eventName} con el NFT #${tokenId} enviado con éxito!`);
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  const abbreviatedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+
   return (
-      <div
-          style={{
-            minHeight: "100vh",
-            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-            color: "#ffffff",
-            fontFamily: "'Montserrat', sans-serif",
-            padding: "40px 20px",
-            textAlign: "center",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-      >
-        <h1
-            style={{
-              fontSize: "3rem",
-              fontWeight: "bold",
-              marginBottom: "20px",
-              color: "#00aaff",
-              textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
-            }}
-        >
-          OmegaNFT
-        </h1>
-        <p
-            style={{
-              fontSize: "1rem",
-              color: "#ff5555",
-              marginBottom: "20px",
-            }}
-        >
-          Para una mejor experiencia en móviles, abre esta página en el navegador integrado de MetaMask.
-        </p>
-        {isConnected ? (
+      <div className="app-container">
+        {isConnected && (
             <>
-              <p
-                  style={{
-                    fontSize: "1.2rem",
-                    marginBottom: "30px",
-                    color: "#cccccc",
-                  }}
-              >
-                Cuenta conectada: {address}
-              </p>
-              <button
-                  onClick={disconnectWallet}
-                  style={{
-                    padding: "12px 30px",
-                    fontSize: "1.1rem",
-                    fontWeight: "bold",
-                    color: "#ffffff",
-                    backgroundColor: "#ff5555",
-                    border: "none",
-                    borderRadius: "25px",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 4px 15px rgba(255, 85, 85, 0.3)",
-                    marginBottom: "30px",
-                  }}
-                  onMouseOver={(e) => (e.target.style.backgroundColor = "#cc4444")}
-                  onMouseOut={(e) => (e.target.style.backgroundColor = "#ff5555")}
-              >
-                Desconectar
-              </button>
-            </>
-        ) : (
-            <button
-                onClick={connectWallet}
-                disabled={isConnecting}
-                style={{
-                  padding: "12px 30px",
-                  fontSize: "1.1rem",
-                  fontWeight: "bold",
-                  color: "#ffffff",
-                  backgroundColor: "#00aaff",
-                  border: "none",
-                  borderRadius: "25px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 4px 15px rgba(0, 170, 255, 0.3)",
-                  marginBottom: "30px",
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#0088cc")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#00aaff")}
-            >
-              {isConnecting ? "Conectando..." : "Conectar con MetaMask"}
-            </button>
-        )}
-        {errorMessage && (
-            <p
-                style={{
-                  fontSize: "1rem",
-                  color: "#ff5555",
-                  marginBottom: "20px",
-                }}
-            >
-              {errorMessage}
-            </p>
-        )}
-        <h2
-            style={{
-              fontSize: "2rem",
-              marginBottom: "30px",
-              color: "#00aaff",
-            }}
-        >
-          Mis Relojes
-        </h2>
-        <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "20px",
-              maxWidth: "1200px",
-              width: "100%",
-            }}
-        >
-          {nfts.map((nft, index) => (
-              <div
-                  key={index}
-                  style={{
-                    backgroundColor: "#2a2a4a",
-                    borderRadius: "15px",
-                    padding: "20px",
-                    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
-                    transition: "transform 0.3s ease",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                  onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              >
-                <div
-                    style={{
-                      width: "100%",
-                      maxHeight: "250px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginBottom: "15px",
-                      overflow: "hidden",
-                    }}
-                >
-                  <img
-                      src={nft.image}
-                      alt={`Reloj ${nft.tokenId}`}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        maxHeight: "250px",
-                        objectFit: "contain",
-                        borderRadius: "10px",
-                      }}
-                  />
-                </div>
-                <h3
-                    style={{
-                      fontSize: "1.2rem",
-                      marginBottom: "10px",
-                      color: "#ffffff",
-                    }}
-                >
-                  {nft.name}
-                </h3>
-                <p
-                    style={{
-                      fontSize: "0.9rem",
-                      color: "#cccccc",
-                      marginBottom: "5px",
-                    }}
-                >
-                  Modelo: {nft.attributes.find(attr => attr.trait_type === "Model")?.value || "N/A"}
-                </p>
-                <p
-                    style={{
-                      fontSize: "0.9rem",
-                      color: "#cccccc",
-                      marginBottom: "5px",
-                    }}
-                >
-                  Número de serie: {nft.attributes.find(attr => attr.trait_type === "Serial Number")?.value || "N/A"}
-                </p>
-                <p
-                    style={{
-                      fontSize: "0.9rem",
-                      color: "#cccccc",
-                      marginBottom: "10px",
-                    }}
-                >
-                  Fecha de fabricación: {nft.attributes.find(attr => attr.trait_type === "Manufacture Date")?.value || "N/A"}
-                </p>
-                <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "#999999",
-                      wordBreak: "break-all",
-                    }}
-                >
-                  Token ID: {nft.tokenId}
-                </p>
-              </div>
-          ))}
-        </div>
-        {isConnected && nfts.length > 0 && (
-            <div
-                style={{
-                  marginTop: "40px",
-                  maxWidth: "1200px",
-                  width: "100%",
-                }}
-            >
-              <h2
-                  style={{
-                    fontSize: "2rem",
-                    marginBottom: "30px",
-                    color: "#00aaff",
-                  }}
-              >
-                Experiencias Exclusivas
-              </h2>
-              {nfts.map((nft, index) => {
-                const eventAccess = nft.attributes.find(attr => attr.trait_type === "Event Access")?.value;
-                return eventAccess ? (
-                    <div
-                        key={index}
-                        style={{
-                          backgroundColor: "#2a2a4a",
-                          borderRadius: "15px",
-                          padding: "20px",
-                          marginBottom: "20px",
-                          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+              <header className="navbar">
+                <img src={logo} alt="Afizionados Logo" className="navbar-logo" />
+                <button className="menu-button" onClick={toggleMenu}>
+                  <span className="menu-icon">{isMenuOpen ? "✖" : "☰"}</span>
+                </button>
+              </header>
+              <nav className={`menu ${isMenuOpen ? "open" : ""}`}>
+                <ul>
+                  <li>
+                    <button
+                        onClick={() => {
+                          setActiveTab("nfts");
+                          setIsMenuOpen(false);
                         }}
+                        className="menu-link"
                     >
-                      <p
-                          style={{
-                            fontSize: "1rem",
-                            color: "#cccccc",
-                            marginBottom: "10px",
-                          }}
-                      >
-                        Tu reloj #{nft.tokenId} te da acceso a: {eventAccess}
-                      </p>
-                      <button
-                          onClick={() => registerForEvent(nft.tokenId, eventAccess)}
-                          style={{
-                            padding: "10px 20px",
-                            fontSize: "1rem",
-                            fontWeight: "bold",
-                            color: "#ffffff",
-                            backgroundColor: "#00aaff",
-                            border: "none",
-                            borderRadius: "25px",
-                            cursor: "pointer",
-                            transition: "all 0.3s ease",
-                            boxShadow: "0 4px 15px rgba(0, 170, 255, 0.3)",
-                          }}
-                          onMouseOver={(e) => (e.target.style.backgroundColor = "#0088cc")}
-                          onMouseOut={(e) => (e.target.style.backgroundColor = "#00aaff")}
-                      >
-                        Registrarse para el evento
-                      </button>
-                    </div>
-                ) : null;
-              })}
+                      Mis Relojes
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                        onClick={() => {
+                          setActiveTab("experiences");
+                          setIsMenuOpen(false);
+                        }}
+                        className="menu-link"
+                    >
+                      Experiencias Exclusivas
+                    </button>
+                  </li>
+                  <li>
+                    <a href="https://afizionados.com/" onClick={() => setIsMenuOpen(false)}>
+                      Acerca de Afizionados
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://afizionados.com/support" onClick={() => setIsMenuOpen(false)}>
+                      Soporte
+                    </a>
+                  </li>
+                  <li>
+                    <button onClick={disconnectWallet} className="menu-disconnect-button">
+                      Desconectar Wallet
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </>
+        )}
+        {!isConnected ? (
+            <div className="welcome-screen">
+              <img src={logo} alt="Afizionados Logo" className="logo" />
+              <p className="tagline">La memorabilidad deportiva de tu equipo favorito, ahora en formato digital</p>
+              <WalletConnect
+                  isConnected={isConnected}
+                  address={address}
+                  isConnecting={isConnecting}
+                  connectWallet={connectWallet}
+                  disconnectWallet={disconnectWallet}
+              />
+              <a href="https://afizionados.com/" className="info-link">
+                ¿Qué es Afizionados?
+              </a>
+            </div>
+        ) : (
+            <div className="main-content">
+              {address && (
+                  <p className="welcome-message">
+                    ¡Bienvenido/a a Afizionados, {abbreviatedAddress}!
+                  </p>
+              )}
+              {errorMessage && <p className="error-message">{errorMessage}</p>}
+              <div className="tabs">
+                <button
+                    className={`tab ${activeTab === "nfts" ? "active" : ""}`}
+                    onClick={() => setActiveTab("nfts")}
+                >
+                  Mis Relojes
+                </button>
+                <button
+                    className={`tab ${activeTab === "experiences" ? "active" : ""}`}
+                    onClick={() => setActiveTab("experiences")}
+                >
+                  Experiencias Exclusivas
+                </button>
+              </div>
+              {activeTab === "nfts" && (
+                  <section id="my-nfts">
+                    {isLoading ? (
+                        <p className="loading-state">Cargando tus relojes...</p>
+                    ) : nfts.length === 0 ? (
+                        <p className="empty-state">
+                          No tienes relojes en tu colección. ¡Explora cómo obtener uno en{" "}
+                          <a href="https://afizionados.com/" className="info-link">Afizionados.com</a>!
+                        </p>
+                    ) : (
+                        <div className="nft-grid">
+                          {nfts.map((nft, index) => (
+                              <NFTCard key={index} nft={nft} />
+                          ))}
+                        </div>
+                    )}
+                  </section>
+              )}
+              {activeTab === "experiences" && (
+                  <section id="experiences">
+                    {isLoading ? (
+                        <p className="loading-state">Cargando tus experiencias...</p>
+                    ) : nfts.length === 0 ? (
+                        <p className="empty-state">
+                          No tienes experiencias disponibles. ¡Obtén un reloj para acceder a eventos exclusivos!
+                        </p>
+                    ) : (
+                        <div className="experience-section">
+                          {nfts.map((nft, index) => (
+                              <ExclusiveExperience
+                                  key={index}
+                                  nft={nft}
+                                  registerForEvent={registerForEvent}
+                              />
+                          ))}
+                        </div>
+                    )}
+                  </section>
+              )}
             </div>
         )}
+        <footer className="footer">
+          <p>
+            Powered by <a href="https://digibio.solutions/" className="footer-link">Digibio</a> © 2025 |{" "}
+            <a href="https://afizionados.com/terms" className="footer-link">Términos de Servicio</a> |{" "}
+            <a href="https://afizionados.com/privacy" className="footer-link">Política de Privacidad</a>
+          </p>
+        </footer>
       </div>
   );
 }
