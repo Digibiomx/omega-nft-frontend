@@ -84,6 +84,7 @@ function App() {
           setEventHistory(userData.eventHistory || []);
         } catch (error) {
           console.error("Error al cargar datos del usuario:", error);
+          setErrorMessage("No se pudieron cargar los datos del usuario. Por favor, intenta de nuevo.");
         }
       };
       fetchUserData();
@@ -164,60 +165,52 @@ function App() {
           console.log(`Evento ${index}: Token ID ${event.args.tokenId.toString()}`);
         });
 
-        const nftsList = [];
-        for (let i = 0; i < transferEvents.length; i++) {
-          const event = transferEvents[i];
-          const tokenId = event.args.tokenId.toString();
-          console.log(`Procesando token ID ${tokenId}...`);
-          try {
-            const tokenOwner = await viemClient.readContract({
-              address: contract.address,
-              abi: contract.abi,
-              functionName: "ownerOf",
-              args: [tokenId],
-            });
-            console.log(`Token ID ${tokenId} pertenece a: ${tokenOwner}`); // Log para depurar
-            if (tokenOwner.toLowerCase() !== owner.toLowerCase()) {
-              console.log(`Token ID ${tokenId} ya no pertenece a ${owner}, pertenece a ${tokenOwner}`);
-              continue;
-            }
+        const nftsList = await Promise.all(
+            transferEvents.map(async (event) => {
+              const tokenId = event.args.tokenId.toString();
+              console.log(`Procesando token ID ${tokenId}...`);
+              try {
+                const tokenOwner = await viemClient.readContract({
+                  address: contract.address,
+                  abi: contract.abi,
+                  functionName: "ownerOf",
+                  args: [tokenId],
+                });
+                if (tokenOwner.toLowerCase() !== owner.toLowerCase()) {
+                  console.log(`Token ID ${tokenId} ya no pertenece a ${owner}, pertenece a ${tokenOwner}`);
+                  return null;
+                }
 
-            const tokenURI = await viemClient.readContract({
-              address: contract.address,
-              abi: contract.abi,
-              functionName: "tokenURI",
-              args: [tokenId],
-            });
-            console.log(`Token ID ${tokenId} URI: ${tokenURI}`);
-
-            const response = await fetch(tokenURI);
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const metadataText = await response.text();
-            console.log(`Raw metadata for token ${tokenId}:`, metadataText);
-            const metadata = JSON.parse(metadataText);
-            console.log(`Parsed metadata for token ${tokenId}:`, JSON.stringify(metadata));
-            const image = metadata.image || "https://via.placeholder.com/150";
-            const name = metadata.name || `NFT ${tokenId}`;
-            const attributes = metadata.attributes || [];
-            console.log(`Image for token ${tokenId}:`, image);
-            console.log(`Name for token ${tokenId}:`, name);
-            const hasEvents = attributes.some(attr => attr.trait_type === "Event Access" && attr.value);
-            const nft = {
-              tokenId,
-              uri: tokenURI,
-              image,
-              name,
-              attributes,
-              hasEvents,
-            };
-            console.log(`NFT creado para token ${tokenId}:`, nft);
-            nftsList.push(nft);
-          } catch (error) {
-            console.error(`Error processing token ${tokenId}:`, error.message);
-          }
-        }
+                const tokenURI = await viemClient.readContract({
+                  address: contract.address,
+                  abi: contract.abi,
+                  functionName: "tokenURI",
+                  args: [tokenId],
+                });
+                const response = await fetch(tokenURI);
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const metadataText = await response.text();
+                const metadata = JSON.parse(metadataText);
+                const image = metadata.image || "https://via.placeholder.com/150";
+                const name = metadata.name || `NFT ${tokenId}`;
+                const attributes = metadata.attributes || [];
+                const hasEvents = attributes.some(attr => attr.trait_type === "Event Access" && attr.value);
+                return {
+                  tokenId,
+                  uri: tokenURI,
+                  image,
+                  name,
+                  attributes,
+                  hasEvents,
+                };
+              } catch (error) {
+                console.error(`Error processing token ${tokenId}:`, error.message);
+                return null;
+              }
+            })
+        );
         console.log("NFTs list antes de filtrar:", nftsList);
         const filteredNfts = nftsList.filter((nft) => nft !== null && nft !== undefined);
         console.log("NFTs filtrados:", filteredNfts);
@@ -253,7 +246,7 @@ function App() {
       alert(`Registro para ${eventName} con el NFT #${tokenId} enviado con éxito!`);
     } catch (error) {
       console.error("Error al registrar el evento:", error);
-      alert("Error al registrar el evento. Por favor, intenta de nuevo.");
+      setErrorMessage("Error al registrar el evento. Por favor, intenta de nuevo.");
     }
   };
 
@@ -285,7 +278,7 @@ function App() {
       alert("Correo electrónico guardado con éxito!");
     } catch (error) {
       console.error("Error al guardar el email:", error);
-      alert("Error al guardar el email. Por favor, intenta de nuevo.");
+      setErrorMessage("Error al guardar el email. Por favor, intenta de nuevo.");
     }
   };
 
