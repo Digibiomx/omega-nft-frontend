@@ -15,6 +15,7 @@ import { loadFull } from "tsparticles";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import axios from 'axios';
 import "./App.css";
 
 // Imágenes para el carrusel (puedes reemplazarlas con imágenes reales)
@@ -69,8 +70,30 @@ function App() {
     console.log("Particles loaded:", container);
   }, []);
 
+  // URL del backend
+  const API_URL = "https://mvp-backend-3lb5.onrender.com/api/users";
+
+  // Cargar datos del usuario desde el backend
   useEffect(() => {
     if (isConnected && address) {
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get(`${API_URL}/${address}`);
+          const userData = response.data;
+          setEmail(userData.email || "");
+          setEventHistory(userData.eventHistory || []);
+        } catch (error) {
+          console.error("Error al cargar datos del usuario:", error);
+        }
+      };
+      fetchUserData();
+    }
+  }, [isConnected, address]);
+
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log("Conectado con address:", address); // Log para depurar
+      console.log("Chain ID actual:", chainId); // Log para depurar
       if (chainId !== polygonAmoy.id) {
         setErrorMessage(`Por favor, cambia a la red Polygon Amoy (chain ID: ${polygonAmoy.id}).`);
         return;
@@ -79,6 +102,7 @@ function App() {
         try {
           setIsLoading(true);
           const contractAddress = "0x38a2550FB656DDAaDB478B3C2258E48866C91b7f";
+          console.log("Inicializando contrato en:", contractAddress); // Log para depurar
           setContract({ address: contractAddress, abi: omegaNFTABI });
           await loadNfts({ address: contractAddress, abi: omegaNFTABI }, address);
         } catch (error) {
@@ -106,11 +130,10 @@ function App() {
     }
   };
 
-  // src/App.js (dentro de la función loadNfts)
-  // src/App.js (dentro de la función loadNfts)
   const loadNfts = async (contract, owner) => {
     if (contract && owner) {
       try {
+        console.log("Cargando NFTs para owner:", owner); // Log para depurar
         const logs = await viemClient.getLogs({
           address: contract.address,
           event: {
@@ -126,6 +149,8 @@ function App() {
           toBlock: "latest",
         });
 
+        console.log("Logs obtenidos:", logs); // Log para depurar
+
         const transferEvents = logs
             .filter((log) => log.args.to.toLowerCase() === owner.toLowerCase())
             .map((log) => ({
@@ -134,7 +159,7 @@ function App() {
               },
             }));
 
-        console.log("Eventos Transfer encontrados:", transferEvents.length);
+        console.log("Eventos Transfer encontrados:", transferEvents.length); // Log para depurar
         transferEvents.forEach((event, index) => {
           console.log(`Evento ${index}: Token ID ${event.args.tokenId.toString()}`);
         });
@@ -151,6 +176,7 @@ function App() {
               functionName: "ownerOf",
               args: [tokenId],
             });
+            console.log(`Token ID ${tokenId} pertenece a: ${tokenOwner}`); // Log para depurar
             if (tokenOwner.toLowerCase() !== owner.toLowerCase()) {
               console.log(`Token ID ${tokenId} ya no pertenece a ${owner}, pertenece a ${tokenOwner}`);
               continue;
@@ -175,10 +201,9 @@ function App() {
             const image = metadata.image || "https://via.placeholder.com/150";
             const name = metadata.name || `NFT ${tokenId}`;
             const attributes = metadata.attributes || [];
-            console.log(`Attributes for token ${tokenId}:`, attributes); // Log para depurar los atributos
+            console.log(`Image for token ${tokenId}:`, image);
+            console.log(`Name for token ${tokenId}:`, name);
             const hasEvents = attributes.some(attr => attr.trait_type === "Event Access" && attr.value);
-            const articleType = attributes.find(attr => attr.trait_type === "Article")?.value || "Desconocido";
-            console.log(`Article type for token ${tokenId}: ${articleType}`); // Log para depurar el tipo de artículo
             const nft = {
               tokenId,
               uri: tokenURI,
@@ -201,6 +226,8 @@ function App() {
         console.error("Error al cargar NFTs:", error);
         setErrorMessage("Error al cargar los NFTs. Revisa la consola para más detalles.");
       }
+    } else {
+      console.log("Contrato o owner no definidos:", { contract, owner }); // Log para depurar
     }
   };
 
@@ -209,17 +236,28 @@ function App() {
     setContract(null);
     setNfts([]);
     setIsMenuOpen(false);
+    setEmail("");
+    setEventHistory([]);
   };
 
-  const registerForEvent = (tokenId, eventName) => {
+  const registerForEvent = async (tokenId, eventName) => {
     const newEvent = {
       tokenId,
       eventName,
       date: new Date().toLocaleString(),
     };
-    setEventHistory([...eventHistory, newEvent]);
-    alert(`Registro para ${eventName} con el NFT #${tokenId} enviado con éxito!`);
+    try {
+      // Enviar el evento al backend
+      const response = await axios.post(`${API_URL}/${address}/events`, newEvent);
+      setEventHistory(response.data.eventHistory);
+      alert(`Registro para ${eventName} con el NFT #${tokenId} enviado con éxito!`);
+    } catch (error) {
+      console.error("Error al registrar el evento:", error);
+      alert("Error al registrar el evento. Por favor, intenta de nuevo.");
+    }
   };
+
+
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -238,9 +276,17 @@ function App() {
     setEmail(e.target.value);
   };
 
-  const saveEmail = () => {
-    setIsEditingEmail(false);
-    alert("Correo electrónico guardado con éxito!");
+  const saveEmail = async () => {
+    try {
+      // Enviar el email al backend
+      const response = await axios.post(`${API_URL}/${address}/email`, { email });
+      setEmail(response.data.email);
+      setIsEditingEmail(false);
+      alert("Correo electrónico guardado con éxito!");
+    } catch (error) {
+      console.error("Error al guardar el email:", error);
+      alert("Error al guardar el email. Por favor, intenta de nuevo.");
+    }
   };
 
   const abbreviatedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
