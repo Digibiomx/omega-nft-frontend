@@ -840,10 +840,10 @@ body {
 }
 
 .profile-value span {
-  font-size: 1rem;
-  color: var(--text-primary);
-  word-break: break-all; /* Romper la palabra para que no desborde */
-  max-width: 200px; /* Limitar el ancho máximo */
+  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+  overflow: hidden; /* Oculta el texto que no cabe */
+  text-overflow: ellipsis; /* Añade puntos suspensivos al final */
+  max-width: 200px; /* Ajusta este valor según el diseño */
 }
 
 .copy-button,
