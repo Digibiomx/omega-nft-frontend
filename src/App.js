@@ -81,7 +81,11 @@ function App() {
           const response = await axios.get(`${API_URL}/${address}`);
           const userData = response.data;
           setEmail(userData.email || "");
-          setEventHistory(userData.eventHistory || []);
+          // Filtrar eventos válidos al cargar desde el backend
+          const validEvents = (userData.eventHistory || []).filter(
+              (event) => event.eventName && event.tokenId && event.date
+          );
+          setEventHistory(validEvents);
         } catch (error) {
           console.error("Error al cargar datos del usuario:", error);
           setErrorMessage("No se pudieron cargar los datos del usuario. Por favor, intenta de nuevo.");
@@ -134,7 +138,7 @@ function App() {
   const loadNfts = async (contract, owner) => {
     if (contract && owner) {
       try {
-        console.log("Cargando NFTs para owner:", owner); // Log para depurar
+        console.log("Cargando NFTs para owner:", owner);
         const logs = await viemClient.getLogs({
           address: contract.address,
           event: {
@@ -150,8 +154,6 @@ function App() {
           toBlock: "latest",
         });
 
-        console.log("Logs obtenidos:", logs); // Log para depurar
-
         const transferEvents = logs
             .filter((log) => log.args.to.toLowerCase() === owner.toLowerCase())
             .map((log) => ({
@@ -159,11 +161,6 @@ function App() {
                 tokenId: log.args.tokenId,
               },
             }));
-
-        console.log("Eventos Transfer encontrados:", transferEvents.length); // Log para depurar
-        transferEvents.forEach((event, index) => {
-          console.log(`Evento ${index}: Token ID ${event.args.tokenId.toString()}`);
-        });
 
         const nftsList = await Promise.all(
             transferEvents.map(async (event) => {
@@ -211,16 +208,14 @@ function App() {
               }
             })
         );
-        console.log("NFTs list antes de filtrar:", nftsList);
         const filteredNfts = nftsList.filter((nft) => nft !== null && nft !== undefined);
-        console.log("NFTs filtrados:", filteredNfts);
         setNfts(filteredNfts);
       } catch (error) {
         console.error("Error al cargar NFTs:", error);
         setErrorMessage("Error al cargar los NFTs. Revisa la consola para más detalles.");
       }
     } else {
-      console.log("Contrato o owner no definidos:", { contract, owner }); // Log para depurar
+      console.log("Contrato o owner no definidos:", { contract, owner });
     }
   };
 
@@ -303,7 +298,7 @@ function App() {
         {isConnected && (
             <>
               <header className="navbar">
-                <img src={logo} alt="Afizionados Logo" className="navbar-logo" />
+                <img src={logo} alt="Afizionados Logo" className="navbar-logo"/>
                 <button className="menu-button" onClick={toggleMenu}>
                   <span className="menu-icon">{isMenuOpen ? "✖" : "☰"}</span>
                 </button>
@@ -316,9 +311,9 @@ function App() {
                           setActiveTab("nfts");
                           setIsMenuOpen(false);
                         }}
-                        className="menu-link"
+                        className={`menu-link ${activeTab === "nfts" ? "active" : ""}`}
                     >
-                      Mis NFTs
+                      <span className="menu-icon">🖼️</span> Mis NFTs
                     </button>
                   </li>
                   <li>
@@ -327,9 +322,9 @@ function App() {
                           setActiveTab("experiences");
                           setIsMenuOpen(false);
                         }}
-                        className="menu-link"
+                        className={`menu-link ${activeTab === "experiences" ? "active" : ""}`}
                     >
-                      Experiencias Exclusivas
+                      <span className="menu-icon">🏆</span> Experiencias Exclusivas
                     </button>
                   </li>
                   <li>
@@ -338,24 +333,24 @@ function App() {
                           setActiveTab("profile");
                           setIsMenuOpen(false);
                         }}
-                        className="menu-link"
+                        className={`menu-link ${activeTab === "profile" ? "active" : ""}`}
                     >
-                      Perfil
+                      <span className="menu-icon">👤</span> Perfil
                     </button>
                   </li>
                   <li>
                     <a href="https://afizionados.com/" onClick={() => setIsMenuOpen(false)}>
-                      Acerca de Afizionados
+                      <span className="menu-icon">ℹ️</span> Acerca de Afizionados
                     </a>
                   </li>
                   <li>
                     <a href="https://afizionados.com/support" onClick={() => setIsMenuOpen(false)}>
-                      Soporte
+                      <span className="menu-icon">❓</span> Soporte
                     </a>
                   </li>
                   <li>
                     <button onClick={disconnectWallet} className="menu-disconnect-button">
-                      Desconectar Wallet
+                      <span className="menu-icon">🔌</span> Desconectar Wallet
                     </button>
                   </li>
                 </ul>
@@ -520,13 +515,20 @@ function App() {
                         </p>
                     ) : (
                         <div className="experience-section">
-                          {nfts.map((nft, index) => (
-                              <ExclusiveExperience
-                                  key={index}
-                                  nft={nft}
-                                  registerForEvent={registerForEvent}
-                              />
-                          ))}
+                          {nfts
+                              .filter((nft) => nft.hasEvents) // Filtrar NFTs con eventos
+                              .map((nft, index) => (
+                                  <ExclusiveExperience
+                                      key={index}
+                                      nft={nft}
+                                      registerForEvent={registerForEvent}
+                                  />
+                              ))}
+                          {nfts.every((nft) => !nft.hasEvents) && (
+                              <p className="empty-state">
+                                No tienes experiencias exclusivas disponibles.
+                              </p>
+                          )}
                         </div>
                     )}
                   </section>
@@ -593,19 +595,26 @@ function App() {
                         </div>
                     )}
                     <h3 className="profile-subtitle">Historial de Eventos</h3>
-                    {eventHistory.length === 0 ? (
-                        <p className="empty-state">No te has registrado en ningún evento aún.</p>
-                    ) : (
-                        <ul className="event-history">
-                          {eventHistory.map((event, index) => (
-                              <li key={index} className="event-history-item">
-                                <span>Evento: {event.eventName}</span>
-                                <span>Token ID: {event.tokenId}</span>
-                                <span>Fecha: {event.date}</span>
-                              </li>
-                          ))}
-                        </ul>
-                    )}
+                    {
+                      // Filtrar eventos válidos (que tengan eventName, tokenId y date)
+                      eventHistory.filter(
+                          (event) => event.eventName && event.tokenId && event.date
+                      ).length === 0 ? (
+                          <p className="empty-state">No te has registrado en ningún evento aún.</p>
+                      ) : (
+                          <ul className="event-history">
+                            {eventHistory
+                                .filter((event) => event.eventName && event.tokenId && event.date)
+                                .map((event, index) => (
+                                    <li key={index} className="event-history-item">
+                                      <span>Evento: {event.eventName}</span>
+                                      <span>Token ID: {event.tokenId}</span>
+                                      <span>Fecha de inscripción: {event.date}</span>
+                                    </li>
+                                ))}
+                          </ul>
+                      )
+                    }
                   </section>
               )}
             </div>

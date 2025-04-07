@@ -4,7 +4,6 @@ import '../App.css';
 
 const ExclusiveExperience = ({ nft, registerForEvent }) => {
     const eventAccess = nft.attributes.find(attr => attr.trait_type === "Event Access")?.value;
-    if (!eventAccess) return null;
 
     return (
         <div className="experience-card">

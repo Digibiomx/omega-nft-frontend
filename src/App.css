@@ -89,36 +89,68 @@ body {
 .menu {
   position: fixed;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--primary-bg) 0%, #102050 100%) !important;
-  transition: left 0.3s ease-in-out;
+  background: rgba(13, 26, 58, 0.95);
+  backdrop-filter: blur(10px);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1 !important;
+  transform: translateX(-100%); /* Iniciar fuera de la pantalla */
+  opacity: 0; /* Iniciar invisible */
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out; /* Animación más suave */
 }
 
 .menu.open {
-  left: 0;
+  transform: translateX(0); /* Mover a la pantalla */
+  opacity: 1; /* Hacer visible */
 }
 
 .menu ul {
   list-style: none;
-  padding: 0;
+  padding: 20px 0; /* Ajustar el padding para centrar mejor */
   margin: 0;
   text-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: center; /* Centrar verticalmente */
+  align-items: center; /* Centrar horizontalmente */
   height: 100%;
   overflow-y: auto;
 }
 
 .menu li {
-  margin: 20px 0;
+  margin: 15px 0;
+  opacity: 0; /* Iniciar invisible */
+  transform: translateY(20px); /* Iniciar desplazado hacia abajo */
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.menu.open li {
+  opacity: 1; /* Hacer visible */
+  transform: translateY(0); /* Mover a su posición */
+}
+
+/* Añadir retrasos progresivos para cada elemento */
+.menu.open li:nth-child(1) {
+  transition-delay: 0.1s;
+}
+.menu.open li:nth-child(2) {
+  transition-delay: 0.2s;
+}
+.menu.open li:nth-child(3) {
+  transition-delay: 0.3s;
+}
+.menu.open li:nth-child(4) {
+  transition-delay: 0.4s;
+}
+.menu.open li:nth-child(5) {
+  transition-delay: 0.5s;
+}
+.menu.open li:nth-child(6) {
+  transition-delay: 0.6s;
 }
 
 .menu a,
@@ -129,12 +161,13 @@ body {
   font-family: 'Montserrat', sans-serif;
   font-weight: 600;
   font-size: 1.5rem;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: color 0.3s ease, transform 0.3s ease, background 0.3s ease;
   background: none;
   border: none;
   cursor: pointer;
   display: block;
-  padding: 15px 20px;
+  padding: 12px 25px; /* Ajustar el padding para un mejor espaciado */
+  border-radius: 10px; /* Bordes redondeados para un look más moderno */
 }
 
 .menu a:hover,
@@ -142,6 +175,19 @@ body {
 .menu-disconnect-button:hover {
   color: var(--accent);
   transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.1); /* Fondo sutil al hacer hover */
+}
+
+.menu-link.active {
+  color: var(--accent); /* Color de acento para el elemento activo */
+  background: rgba(255, 255, 255, 0.1); /* Fondo sutil para destacar */
+  border-left: 4px solid var(--accent); /* Barra lateral para resaltar */
+  padding-left: 21px; /* Ajustar el padding para que la barra no desplace el texto */
+}
+
+.menu-icon {
+  margin-right: 10px; /* Espacio entre el icono y el texto */
+  font-size: 1.2rem; /* Tamaño del icono */
 }
 
 /* Welcome Screen */
@@ -357,6 +403,12 @@ body {
 .experience-section {
   width: 100%;
   max-width: 1200px;
+}
+
+.experience-text.no-event {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 10px 0;
 }
 
 /* NFT Card */
