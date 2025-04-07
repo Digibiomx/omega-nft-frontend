@@ -1052,3 +1052,129 @@ body {
     font-size: 0.8rem;
   }
 }
+
+/* Estilos para el efecto de volteo de la tarjeta */
+.nft-card {
+  perspective: 1000px; /* Añadir perspectiva para el efecto 3D */
+  cursor: pointer; /* Indicar que la tarjeta es clickable */
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s; /* Animación de volteo */
+  transform-style: preserve-3d; /* Habilitar el efecto 3D */
+}
+
+.card-inner.flipped {
+  transform: rotateY(180deg); /* Rotar la tarjeta 180 grados al voltear */
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden; /* Ocultar la cara trasera cuando no está visible */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px; /* Aumentar el padding para dar más espacio al contenido */
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%);
+  box-shadow: var(--shadow);
+}
+
+.card-front {
+  transform: rotateY(0deg); /* Cara frontal visible por defecto */
+}
+
+.card-back {
+  transform: rotateY(180deg); /* Cara trasera rotada 180 grados */
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Estilos para el código QR y su contenedor */
+.qr-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem; /* Reducir ligeramente el tamaño del título */
+  color: var(--text-primary);
+  margin-top: 10px; /* Añadir margen superior para que no sobresalga */
+  margin-bottom: 10px;
+  text-align: center; /* Asegurar que el texto esté centrado */
+}
+
+.qr-container {
+  background: #ffffff; /* Fondo blanco para el QR */
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.qr-instruction {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.qr-event {
+  font-size: 0.9rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Ajustar el tamaño de la tarjeta para que el contenido trasero no desborde */
+.nft-card {
+  min-height: 400px; /* Asegurar que la tarjeta tenga suficiente altura para el contenido trasero */
+}
+
+.back-button {
+  background: var(--gradient-border);
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.back-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 170, 255, 0.4);
+}
+
+/* Media Queries para móviles */
+@media (max-width: 768px) {
+  .nft-card {
+    min-height: 350px; /* Ajustar altura en móviles */
+  }
+
+  .qr-title {
+    font-size: 0.95rem; /* Reducir aún más el tamaño del título en móviles */
+    margin-top: 8px; /* Ajustar margen en móviles */
+  }
+
+  .qr-container {
+    padding: 8px;
+  }
+
+  .qr-instruction,
+  .qr-event {
+    font-size: 0.8rem;
+  }
+
+  .card-front,
+  .card-back {
+    padding: 15px; /* Reducir el padding en móviles */
+  }
+}
