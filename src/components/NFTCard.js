@@ -3,14 +3,13 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import '../App.css';
 
-const NFTCard = ({ nft }) => {
-    // Estado para controlar si la tarjeta está volteada
+const NFTCard = ({ nft, address }) => {
     const [isFlipped, setIsFlipped] = useState(false);
 
     // Determinar el tipo de artículo basado en el atributo "Article"
     const articleType = nft.attributes.find(attr => attr.trait_type === "Article")?.value || "Desconocido";
     const isWatch = articleType.toLowerCase().includes("reloj");
-    console.log(`NFT ${nft.tokenId} - Article Type: ${articleType}, isWatch: ${isWatch}`); // Log para depurar
+    console.log(`NFT ${nft.tokenId} - Article Type: ${articleType}, isWatch: ${isWatch}`);
 
     // Obtener los atributos específicos según el tipo de artículo
     const getAttribute = (traitType) => {
@@ -20,13 +19,13 @@ const NFTCard = ({ nft }) => {
     // Obtener el nombre del evento asociado (si existe)
     const eventAccess = nft.attributes.find(attr => attr.trait_type === "Event Access")?.value || "Sin evento";
 
-    // Generar un valor único para el código QR
-    // Este valor puede ser una combinación del tokenId, el nombre del NFT, y el evento asociado (si lo tiene)
+    // Incluir la address del usuario en el QR
     const qrValue = JSON.stringify({
         tokenId: nft.tokenId,
         name: nft.name,
         event: eventAccess,
         type: isWatch ? "Watch" : "Memorabilia",
+        address: address, // Añadir la address del usuario
     });
 
     // Manejar el clic para voltear la tarjeta
@@ -37,7 +36,6 @@ const NFTCard = ({ nft }) => {
     return (
         <div className="nft-card" onClick={handleCardClick}>
             <div className={`card-inner ${isFlipped ? 'flipped' : ''}`}>
-                {/* Parte frontal de la tarjeta */}
                 <div className="card-front">
                     {nft.hasEvents && (
                         <div className="event-badge">
@@ -84,8 +82,6 @@ const NFTCard = ({ nft }) => {
                     </div>
                     <p className="nft-token-id">Token ID: {nft.tokenId}</p>
                 </div>
-
-                {/* Parte trasera de la tarjeta */}
                 <div className="card-back">
                     <h3 className="qr-title">Código QR del NFT #{nft.tokenId}</h3>
                     <div className="qr-container">

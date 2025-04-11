@@ -499,7 +499,7 @@ function App() {
                     ) : (
                         <div className="nft-grid">
                           {nfts.map((nft, index) => (
-                              <NFTCard key={index} nft={nft} />
+                              <NFTCard key={index} nft={nft} address={address} />
                           ))}
                         </div>
                     )}
@@ -590,6 +590,7 @@ function App() {
                                     className="profile-nft-image"
                                 />
                                 <p className="profile-nft-name">{nft.name}</p>
+                                <NFTCard nft={nft} address={address}/>
                               </div>
                           ))}
                         </div>
