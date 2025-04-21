@@ -414,18 +414,18 @@ body {
 /* NFT Card */
 .nft-card {
   position: relative;
-  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%);
   border-radius: 15px;
-  padding: 15px;
-  box-shadow: var(--shadow);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   animation: fadeIn 0.5s ease-in-out;
   border: 2px solid transparent;
   background-clip: padding-box;
-  position: relative;
+  perspective: 1000px; /* Añadir perspectiva para el efecto 3D */
+  cursor: pointer; /* Indicar que la tarjeta es clickable */
+  width: 100%; /* Asegurar que la tarjeta ocupe todo el ancho disponible */
+  min-height: 450px; /* Aumentar la altura mínima para evitar desbordes */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .nft-card::before {
@@ -462,7 +462,7 @@ body {
 .nft-image-container {
   position: relative;
   width: 100%;
-  max-height: 220px;
+  max-height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -503,17 +503,22 @@ body {
 .nft-image {
   width: 100%;
   height: auto;
-  max-height: 220px;
+  max-height: 200px;
   object-fit: contain;
   border-radius: 10px;
 }
 
 .nft-title {
   font-family: 'Montserrat', sans-serif;
-  font-weight: 600; /* Peso semi-bold para los títulos de NFTs */
-  font-size: 1.2rem;
-  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 1.1rem; /* Reducir ligeramente el tamaño del título */
+  margin-bottom: 8px;
   color: var(--text-primary);
+  white-space: nowrap; /* Evitar que el título se divida en varias líneas */
+  overflow: hidden; /* Ocultar el texto que no cabe */
+  text-overflow: ellipsis; /* Añadir puntos suspensivos al final */
+  width: 100%; /* Asegurar que el título ocupe el ancho disponible */
+  text-align: center;
 }
 
 .nft-attributes {
@@ -531,15 +536,23 @@ body {
   margin-bottom: 5px;
 }
 
+.attribute-label,
+.attribute-value {
+  font-size: 0.8rem; /* Reducir el tamaño de la fuente para evitar desbordes */
+  white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .attribute-label {
-  font-size: 0.85rem;
   color: var(--text-secondary);
   font-weight: 500;
+  max-width: 50%; /* Limitar el ancho para evitar desbordes */
 }
 
 .attribute-value {
-  font-size: 0.85rem;
   color: var(--text-primary);
+  max-width: 50%; /* Limitar el ancho para evitar desbordes */
 }
 
 .nft-token-id {
@@ -752,7 +765,7 @@ body {
   }
 
   .nft-card {
-    padding: 10px;
+    min-height: 400px;
   }
 
   .nft-image-container {
@@ -943,29 +956,46 @@ body {
 
 .profile-nft-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Tarjetas más pequeñas */
+  gap: 10px; /* Reducir el espacio entre tarjetas */
 }
 
 .profile-nft-item {
-  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%);
+  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%); /* Fondo similar a las tarjetas, pero más pequeño */
   border-radius: 10px;
   padding: 10px;
   box-shadow: var(--shadow);
   text-align: center;
+  transition: transform 0.3s ease;
 }
 
+.profile-nft-item:hover {
+  transform: translateY(-3px);
+}
+
+/* Eliminar los estilos que ya no necesitamos */
+.profile-nft-image,
+.profile-nft-name {
+  display: none; /* Ocultar estos estilos ya que no los usamos */
+}
+
+/* Restaurar los estilos para las imágenes y nombres */
 .profile-nft-image {
+  display: block; /* Restaurar la visibilidad */
   width: 100%;
-  height: 100px;
+  height: 80px; /* Reducir la altura para que sea más compacta */
   object-fit: contain;
   border-radius: 5px;
   margin-bottom: 5px;
 }
 
 .profile-nft-name {
+  display: block; /* Restaurar la visibilidad */
   font-size: 0.9rem;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .event-history {
@@ -1037,11 +1067,16 @@ body {
   }
 
   .profile-nft-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Aún más pequeñas en móviles */
+    gap: 8px;
+  }
+
+  .profile-nft-item {
+    padding: 8px;
   }
 
   .profile-nft-image {
-    height: 80px;
+    height: 60px;
   }
 
   .profile-nft-name {
@@ -1062,7 +1097,7 @@ body {
 .card-inner {
   position: relative;
   width: 100%;
-  height: 100%;
+  min-height: 450px; /* Asegurar que el contenedor interno tenga la misma altura mínima */
   transition: transform 0.6s; /* Animación de volteo */
   transform-style: preserve-3d; /* Habilitar el efecto 3D */
 }
@@ -1075,15 +1110,16 @@ body {
 .card-back {
   position: absolute;
   width: 100%;
-  height: 100%;
+  height: 100%; /* Usar toda la altura disponible */
   backface-visibility: hidden; /* Ocultar la cara trasera cuando no está visible */
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px; /* Aumentar el padding para dar más espacio al contenido */
+  padding: 15px; /* Reducir el padding para evitar desbordes */
   border-radius: 15px;
   background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%);
   box-shadow: var(--shadow);
+  overflow: hidden; /* Evitar que el contenido se desborde */
 }
 
 .card-front {
@@ -1159,6 +1195,35 @@ body {
     min-height: 350px; /* Ajustar altura en móviles */
   }
 
+  .card-inner {
+    min-height: 400px; /* Ajustar la altura del contenedor interno en móviles */
+  }
+
+  .nft-image-container {
+    max-height: 180px; /* Reducir la altura de la imagen en móviles */
+  }
+
+  .nft-image {
+    max-height: 180px;
+  }
+
+  .nft-title {
+    font-size: 1rem;
+  }
+
+  .nft-attribute {
+    padding: 3px 6px;
+  }
+
+  .attribute-label,
+  .attribute-value {
+    font-size: 0.75rem;
+  }
+
+  .nft-token-id {
+    font-size: 0.65rem;
+  }
+
   .qr-title {
     font-size: 0.95rem; /* Reducir aún más el tamaño del título en móviles */
     margin-top: 8px; /* Ajustar margen en móviles */
@@ -1175,6 +1240,6 @@ body {
 
   .card-front,
   .card-back {
-    padding: 15px; /* Reducir el padding en móviles */
+    padding: 10px; /* Reducir el padding en móviles */
   }
 }

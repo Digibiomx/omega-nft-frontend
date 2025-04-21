@@ -18,6 +18,60 @@ import "slick-carousel/slick/slick-theme.css";
 import axios from 'axios';
 import "./App.css";
 
+// Nuevo componente para el validador de QR
+const QRValidator = () => {
+  const [qrData, setQrData] = useState("");
+  const [validationResult, setValidationResult] = useState(null);
+
+  const handleValidate = async () => {
+    try {
+      const response = await axios.post("https://mvp-backend-3lb5.onrender.com/api/users/validate-qr", {
+        qrData: qrData,
+      });
+      setValidationResult(response.data);
+    } catch (error) {
+      console.error("Error al validar el QR:", error);
+      setValidationResult({
+        valid: false,
+        message: "Error al validar el QR: " + error.response?.data?.message || error.message,
+      });
+    }
+  };
+
+  return (
+      <section id="qr-validator">
+        <h2 className="profile-title">Validador de QR</h2>
+        <div className="profile-info">
+          <div className="profile-item">
+            <span className="profile-label">Datos del QR:</span>
+            <div className="profile-value">
+              <input
+                  type="text"
+                  value={qrData}
+                  onChange={(e) => setQrData(e.target.value)}
+                  className="email-input"
+                  placeholder="Pega los datos del QR aquí"
+              />
+              <button className="save-button" onClick={handleValidate}>
+                Validar
+              </button>
+            </div>
+          </div>
+          {validationResult && (
+              <div className="profile-item">
+                <span className="profile-label">Resultado:</span>
+                <div className="profile-value">
+                            <span style={{ color: validationResult.valid ? "green" : "red" }}>
+                                {validationResult.message}
+                            </span>
+                </div>
+              </div>
+          )}
+        </div>
+      </section>
+  );
+};
+
 // Imágenes para el carrusel (puedes reemplazarlas con imágenes reales)
 const carouselImages = [
   "https://ipfs.io/ipfs/bafkreib2jijsffefwnksnbp2bjtc2ques7vondinbqipatx66c5ynnpgem",
@@ -190,7 +244,12 @@ function App() {
                 }
                 const metadataText = await response.text();
                 const metadata = JSON.parse(metadataText);
-                const image = metadata.image || "https://via.placeholder.com/150";
+                // Transformar la URL de IPFS a una URL accesible
+                const image = metadata.image
+                    ? metadata.image.startsWith("ipfs://")
+                        ? metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+                        : metadata.image
+                    : "https://via.placeholder.com/150";
                 const name = metadata.name || `NFT ${tokenId}`;
                 const attributes = metadata.attributes || [];
                 const hasEvents = attributes.some(attr => attr.trait_type === "Event Access" && attr.value);
@@ -336,6 +395,17 @@ function App() {
                         className={`menu-link ${activeTab === "profile" ? "active" : ""}`}
                     >
                       <span className="menu-icon">👤</span> Perfil
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                        onClick={() => {
+                          setActiveTab("qr-validator");
+                          setIsMenuOpen(false);
+                        }}
+                        className={`menu-link ${activeTab === "qr-validator" ? "active" : ""}`}
+                    >
+                      <span className="menu-icon">📷</span> Validador de QR
                     </button>
                   </li>
                   <li>
@@ -486,6 +556,12 @@ function App() {
                 >
                   Perfil
                 </button>
+                <button
+                    className={`tab ${activeTab === "qr-validator" ? "active" : ""}`}
+                    onClick={() => setActiveTab("qr-validator")}
+                >
+                  Validador de QR
+                </button>
               </div>
               {activeTab === "nfts" && (
                   <section id="my-nfts">
@@ -581,7 +657,7 @@ function App() {
                     {nfts.length === 0 ? (
                         <p className="empty-state">No tienes NFTs en tu colección.</p>
                     ) : (
-                        <div className="nft-grid profile-nft-grid">
+                        <div className="profile-nft-grid">
                           {nfts.map((nft, index) => (
                               <div key={index} className="profile-nft-item">
                                 <img
@@ -590,7 +666,6 @@ function App() {
                                     className="profile-nft-image"
                                 />
                                 <p className="profile-nft-name">{nft.name}</p>
-                                <NFTCard nft={nft} address={address}/>
                               </div>
                           ))}
                         </div>
@@ -617,6 +692,9 @@ function App() {
                       )
                     }
                   </section>
+              )}
+              {activeTab === "qr-validator" && (
+                  <QRValidator />
               )}
             </div>
         )}
