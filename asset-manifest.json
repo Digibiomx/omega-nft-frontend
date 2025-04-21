@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/omega-nft-frontend/static/css/main.6ed5aa5e.css",
-    "main.js": "/omega-nft-frontend/static/js/main.6a9957af.js",
+    "main.css": "/omega-nft-frontend/static/css/main.3e684b14.css",
+    "main.js": "/omega-nft-frontend/static/js/main.1554a9cd.js",
     "static/js/77.53b8972c.chunk.js": "/omega-nft-frontend/static/js/77.53b8972c.chunk.js",
     "static/js/55.2df649de.chunk.js": "/omega-nft-frontend/static/js/55.2df649de.chunk.js",
     "static/js/453.a8b591ce.chunk.js": "/omega-nft-frontend/static/js/453.a8b591ce.chunk.js",
@@ -15,8 +15,8 @@
     "static/media/slick.ttf": "/omega-nft-frontend/static/media/slick.c94f7671dcc99dce43e2.ttf",
     "static/media/slick.woff": "/omega-nft-frontend/static/media/slick.295183786cd8a1389865.woff",
     "index.html": "/omega-nft-frontend/index.html",
-    "main.6ed5aa5e.css.map": "/omega-nft-frontend/static/css/main.6ed5aa5e.css.map",
-    "main.6a9957af.js.map": "/omega-nft-frontend/static/js/main.6a9957af.js.map",
+    "main.3e684b14.css.map": "/omega-nft-frontend/static/css/main.3e684b14.css.map",
+    "main.1554a9cd.js.map": "/omega-nft-frontend/static/js/main.1554a9cd.js.map",
     "55.2df649de.chunk.js.map": "/omega-nft-frontend/static/js/55.2df649de.chunk.js.map",
     "453.a8b591ce.chunk.js.map": "/omega-nft-frontend/static/js/453.a8b591ce.chunk.js.map",
     "171.3a0995b7.chunk.js.map": "/omega-nft-frontend/static/js/171.3a0995b7.chunk.js.map",
@@ -25,7 +25,7 @@
     "382.797440d1.chunk.js.map": "/omega-nft-frontend/static/js/382.797440d1.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6ed5aa5e.css",
-    "static/js/main.6a9957af.js"
+    "static/css/main.3e684b14.css",
+    "static/js/main.1554a9cd.js"
   ]
 }
