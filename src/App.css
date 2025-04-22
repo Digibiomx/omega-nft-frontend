@@ -1,4 +1,3 @@
-/* src/App.css */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
 
 :root {
@@ -278,7 +277,6 @@ body {
   display: none; /* Ocultar las flechas por defecto de slick */
 }
 
-
 .info-link {
   font-size: 0.9rem;
   color: var(--text-secondary);
@@ -445,10 +443,64 @@ body {
   box-shadow: 0 8px 25px rgba(0, 170, 255, 0.3);
 }
 
-.event-badge {
+/* Estilos para el botón de opciones (tres puntos) */
+.options-button {
   position: absolute;
   top: 10px;
   right: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+  z-index: 2; /* Asegurar que esté por encima del badge */
+}
+
+.options-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Estilos para el dropdown */
+.options-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 10px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  z-index: 3;
+  overflow: hidden;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent);
+}
+
+.event-badge {
+  position: absolute;
+  top: 10px;
+  right: 45px; /* Ajustar posición para no superponerse con el botón de opciones */
   background: var(--experience-gradient);
   color: var(--text-primary);
   padding: 5px 10px;
@@ -920,8 +972,29 @@ body {
     padding: 15px 0;
   }
 
-}
+  /* Ajustes para el botón de opciones y dropdown en móviles */
+  .options-button {
+    width: 25px;
+    height: 25px;
+    font-size: 1rem;
+  }
 
+  .options-dropdown {
+    top: 40px;
+    right: 5px;
+  }
+
+  .dropdown-item {
+    font-size: 0.85rem;
+    padding: 8px 15px;
+  }
+
+  .event-badge {
+    right: 40px; /* Ajustar posición para no superponerse con el botón de opciones */
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+}
 
 /* Profile Section */
 #profile {
@@ -971,9 +1044,6 @@ body {
 }
 
 .profile-value span {
-  /*white-space: nowrap;  Evita que el texto se divida en varias líneas */
-  /*overflow: hidden;  Oculta el texto que no cabe */
-  /*text-overflow: ellipsis;  Añade puntos suspensivos al final */
   max-width: 800px; /* Ajusta este valor según el diseño */
 }
 
@@ -1033,12 +1103,6 @@ body {
   transform: translateY(-3px);
 }
 
-/* Eliminar los estilos que ya no necesitamos */
-.profile-nft-image,
-.profile-nft-name {
-  display: none; /* Ocultar estos estilos ya que no los usamos */
-}
-
 /* Restaurar los estilos para las imágenes y nombres */
 .profile-nft-image {
   display: block; /* Restaurar la visibilidad */
@@ -1078,74 +1142,6 @@ body {
 .event-history-item span {
   font-size: 0.9rem;
   color: var(--text-primary);
-}
-
-/* Media Queries para móviles */
-@media (max-width: 768px) {
-  .profile-title {
-    font-size: 1.5rem;
-  }
-
-  .profile-info {
-    padding: 15px;
-  }
-
-  .profile-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-
-  .profile-label {
-    font-size: 0.9rem;
-  }
-
-  .profile-value {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .profile-value span {
-    font-size: 0.9rem;
-    max-width: 150px; /* Ajustar para pantallas pequeñas */
-  }
-
-  .copy-button,
-  .edit-button,
-  .save-button {
-    font-size: 0.8rem;
-    padding: 4px 10px;
-  }
-
-  .email-input {
-    font-size: 0.9rem;
-    width: 100%;
-  }
-
-  .profile-subtitle {
-    font-size: 1.2rem;
-  }
-
-  .profile-nft-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Aún más pequeñas en móviles */
-    gap: 8px;
-  }
-
-  .profile-nft-item {
-    padding: 8px;
-  }
-
-  .profile-nft-image {
-    height: 60px;
-  }
-
-  .profile-nft-name {
-    font-size: 0.8rem;
-  }
-
-  .event-history-item span {
-    font-size: 0.8rem;
-  }
 }
 
 /* Estilos para el efecto de volteo de la tarjeta */
@@ -1317,5 +1313,221 @@ body {
   .cancel-button {
     font-size: 0.9rem;
     padding: 8px 15px;
+  }
+}
+
+/* Profile Section */
+#profile {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.profile-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700; /* Peso bold para el título principal */
+  font-size: 2rem;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.profile-info {
+  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 30px;
+}
+
+/* Profile Section */
+.profile-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap; /* Permitir que el contenido se ajuste en varias líneas */
+  gap: 10px;
+}
+
+.profile-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.profile-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%; /* Asegurar que no desborde */
+}
+
+.profile-value span {
+  max-width: 800px; /* Ajusta este valor según el diseño */
+}
+
+.copy-button,
+.edit-button,
+.save-button {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.copy-button:hover,
+.edit-button:hover,
+.save-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 170, 255, 0.4);
+}
+
+.email-input {
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.profile-subtitle {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600; /* Peso semi-bold para subtítulos */
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin: 20px 0 10px;
+}
+
+.profile-nft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Tarjetas más pequeñas */
+  gap: 10px; /* Reducir el espacio entre tarjetas */
+}
+
+.profile-nft-item {
+  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%); /* Fondo similar a las tarjetas, pero más pequeño */
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.profile-nft-item:hover {
+  transform: translateY(-3px);
+}
+
+/* Restaurar los estilos para las imágenes y nombres */
+.profile-nft-image {
+  display: block; /* Restaurar la visibilidad */
+  width: 100%;
+  height: 80px; /* Reducir la altura para que sea más compacta */
+  object-fit: contain;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+
+.profile-nft-name {
+  display: block; /* Restaurar la visibilidad */
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.event-history-item {
+  background: linear-gradient(135deg, var(--card-bg) 0%, #3a3a6a 100%);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.event-history-item span {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Media Queries para móviles */
+@media (max-width: 768px) {
+  .profile-title {
+    font-size: 1.5rem;
+  }
+
+  .profile-info {
+    padding: 15px;
+  }
+
+  .profile-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .profile-label {
+    font-size: 0.9rem;
+  }
+
+  .profile-value {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .profile-value span {
+    font-size: 0.9rem;
+    max-width: 150px; /* Ajustar para pantallas pequeñas */
+  }
+
+  .copy-button,
+  .edit-button,
+  .save-button {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+  }
+
+  .email-input {
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  .profile-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .profile-nft-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Aún más pequeñas en móviles */
+    gap: 8px;
+  }
+
+  .profile-nft-item {
+    padding: 8px;
+  }
+
+  .profile-nft-image {
+    height: 60px;
+  }
+
+  .profile-nft-name {
+    font-size: 0.8rem;
+  }
+
+  .event-history-item span {
+    font-size: 0.8rem;
   }
 }
