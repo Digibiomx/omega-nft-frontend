@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import '../App.css';
 
-const NFTCard = ({ nft, address }) => {
+const NFTCard = ({ nft, address, logo }) => {
     const [isFlipped, setIsFlipped] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -30,7 +30,6 @@ const NFTCard = ({ nft, address }) => {
 
     // Manejar el clic para voltear la tarjeta
     const handleCardClick = (e) => {
-        // Evitar que el clic en el botón de opciones voltee la tarjeta
         if (!e.target.closest('.options-button') && !e.target.closest('.options-dropdown')) {
             setIsFlipped(!isFlipped);
         }
@@ -38,34 +37,135 @@ const NFTCard = ({ nft, address }) => {
 
     // Alternar la visibilidad del dropdown
     const toggleDropdown = (e) => {
-        e.stopPropagation(); // Evitar que el clic en el botón voltee la tarjeta
+        e.stopPropagation();
         setIsDropdownOpen(!isDropdownOpen);
     };
 
-    // Descargar la imagen del NFT
+    // Crear la imagen con branding usando Canvas
+    const createBrandedImage = async () => {
+        return new Promise((resolve, reject) => {
+            // Crear el canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Dimensiones del canvas (cuadrado para un diseño uniforme)
+            const canvasSize = 600; // Tamaño del canvas (600x600 para alta calidad)
+            canvas.width = canvasSize;
+            canvas.height = canvasSize;
+
+            // 1. Dibujar el fondo con gradiente
+            const gradient = ctx.createLinearGradient(0, 0, canvasSize, canvasSize);
+            gradient.addColorStop(0, '#00aaff'); // --accent
+            gradient.addColorStop(1, '#0088cc'); // --accent-dark
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            // 2. Agregar un patrón futurista (líneas diagonales sutiles)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = -canvasSize; i < canvasSize * 2; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i + canvasSize, canvasSize);
+                ctx.stroke();
+            }
+
+            // 3. Cargar y dibujar la imagen del NFT
+            const nftImage = new Image();
+            nftImage.crossOrigin = 'Anonymous'; // Para manejar imágenes de IPFS
+            nftImage.src = nft.image;
+
+            nftImage.onload = () => {
+                // Dimensiones de la imagen del NFT (80% del canvas para que haya espacio para el branding)
+                const imgSize = canvasSize * 0.8;
+                const imgX = (canvasSize - imgSize) / 2;
+                const imgY = (canvasSize - imgSize) / 2 - 20; // Desplazar ligeramente hacia arriba para dejar espacio al texto
+
+                // Dibujar un marco alrededor de la imagen
+                ctx.strokeStyle = '#00aaff'; // --accent
+                ctx.lineWidth = 4;
+                ctx.strokeRect(imgX - 2, imgY - 2, imgSize + 4, imgSize + 4);
+
+                // Dibujar la imagen
+                ctx.drawImage(nftImage, imgX, imgY, imgSize, imgSize);
+
+                // Agregar un efecto de brillo/sombra
+                ctx.shadowColor = 'rgba(0, 170, 255, 0.5)';
+                ctx.shadowBlur = 15;
+                ctx.drawImage(nftImage, imgX, imgY, imgSize, imgSize);
+                ctx.shadowBlur = 0; // Resetear la sombra
+
+                // 4. Cargar y dibujar el logo como watermark
+                const logoImage = new Image();
+                logoImage.crossOrigin = 'Anonymous';
+                logoImage.src = logo;
+
+                logoImage.onload = () => {
+                    const logoSize = canvasSize * 0.2; // 20% del tamaño del canvas
+                    const logoX = canvasSize - logoSize - 20; // Esquina superior derecha
+                    const logoY = 20;
+
+                    // Dibujar el logo con opacidad
+                    ctx.globalAlpha = 0.25; // Opacidad del 25%
+                    ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+                    ctx.globalAlpha = 1.0; // Restaurar opacidad
+
+                    // 5. Dibujar el texto en la parte inferior
+                    ctx.font = '20px Montserrat';
+                    ctx.fillStyle = '#b0b8d8'; // --text-secondary
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const text = `Afizionados.com | NFT #${nft.tokenId}`;
+                    ctx.fillText(text, canvasSize / 2, canvasSize - 40);
+
+                    // Convertir el canvas a blob y resolver la promesa
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/png');
+                };
+
+                logoImage.onerror = () => {
+                    reject(new Error('No se pudo cargar el logo.'));
+                };
+            };
+
+            nftImage.onerror = () => {
+                reject(new Error('No se pudo cargar la imagen del NFT.'));
+            };
+        });
+    };
+
+    // Descargar la imagen con branding
     const downloadImage = async () => {
         try {
-            const response = await fetch(nft.image, { mode: 'cors' });
-            const blob = await response.blob();
+            const blob = await createBrandedImage();
             const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `NFT_${nft.tokenId}_Afizionados.png`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error al descargar la imagen:', error);
+            alert('Hubo un error al generar la imagen. Descargando la imagen original como alternativa.');
+            // Fallback: Descargar la imagen original
+            const response = await fetch(nft.image, { mode: 'cors' });
+            const fallbackBlob = await response.blob();
+            const url = window.URL.createObjectURL(fallbackBlob);
             const link = document.createElement('a');
             link.href = url;
             link.download = `NFT_${nft.tokenId}.png`;
             link.click();
             window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error al descargar la imagen:', error);
-            alert('Hubo un error al intentar descargar la imagen.');
         }
         setIsDropdownOpen(false);
     };
 
-    // Compartir la imagen usando Web Share API
+    // Compartir la imagen con branding
     const shareImage = async () => {
         try {
-            const response = await fetch(nft.image, { mode: 'cors' });
-            const blob = await response.blob();
-            const file = new File([blob], `NFT_${nft.tokenId}.png`, { type: 'image/png' });
+            const blob = await createBrandedImage();
+            const file = new File([blob], `NFT_${nft.tokenId}_Afizionados.png`, { type: 'image/png' });
             const shareData = {
                 title: `Mi NFT ${nft.name}`,
                 text: `¡Mira mi NFT "${nft.name}" en Afizionados! #NFT #Afizionados`,
@@ -81,8 +181,16 @@ const NFTCard = ({ nft, address }) => {
             }
         } catch (error) {
             console.error('Error al compartir la imagen:', error);
-            alert('Hubo un error al intentar compartir. Por favor, descarga la imagen y compártela manualmente.');
-            downloadImage();
+            alert('Hubo un error al generar la imagen para compartir. Descargando la imagen original como alternativa.');
+            // Fallback: Descargar la imagen original
+            const response = await fetch(nft.image, { mode: 'cors' });
+            const fallbackBlob = await response.blob();
+            const url = window.URL.createObjectURL(fallbackBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `NFT_${nft.tokenId}.png`;
+            link.click();
+            window.URL.revokeObjectURL(url);
         }
         setIsDropdownOpen(false);
     };
@@ -91,7 +199,6 @@ const NFTCard = ({ nft, address }) => {
         <div className="nft-card" onClick={handleCardClick}>
             <div className={`card-inner ${isFlipped ? 'flipped' : ''}`}>
                 <div className="card-front">
-                    {/* Botón de opciones (tres puntos) */}
                     <button className="options-button" onClick={toggleDropdown}>
                         ⋮
                     </button>
