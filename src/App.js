@@ -36,6 +36,7 @@ const QRValidator = () => {
         qrData: data,
       });
       setValidationResult(response.data);
+      setError(null); // Limpiar cualquier mensaje de error previo
       setIsScanning(false);
       setIsManualInput(false);
       setShowCameraOptions(false);
@@ -43,8 +44,9 @@ const QRValidator = () => {
       console.error("Error al validar el QR:", error);
       setValidationResult({
         valid: false,
-        message: "Error al validar el QR: " + error.response?.data?.message || error.message,
+        message: "Error al validar el QR: " + (error.response?.data?.message || error.message),
       });
+      setError(null); // Limpiar cualquier mensaje de error previo
       setIsScanning(false);
       setIsManualInput(false);
       setShowCameraOptions(false);
@@ -55,6 +57,7 @@ const QRValidator = () => {
     setIsScanning(true);
     setShowCameraOptions(true);
     setError(null);
+    setValidationResult(null); // Limpiar el resultado previo al iniciar un nuevo escaneo
   };
 
   const toggleCamera = () => {
@@ -96,10 +99,7 @@ const QRValidator = () => {
                     return;
                   }
                   if (err instanceof ChecksumException || err instanceof FormatException) {
-                    console.error("Error al decodificar el QR:", err);
-                    setError("No se pudo decodificar el código QR. Asegúrate de que sea válido.");
-                    setIsScanning(false);
-                    stream.getTracks().forEach(track => track.stop());
+                    // Ignorar errores de decodificación y continuar escaneando
                     return;
                   }
                   console.error("Error al escanear el QR:", err);
@@ -142,16 +142,10 @@ const QRValidator = () => {
         <div className="profile-info">
           {!isScanning && !isManualInput && !showCameraOptions && (
               <div className="profile-item">
-                <button
-                    className="scan-button"
-                    onClick={startScanning}
-                >
+                <button className="scan-button" onClick={startScanning}>
                   Validar QR
                 </button>
-                <button
-                    className="manual-button"
-                    onClick={() => setIsManualInput(true)}
-                >
+                <button className="manual-button" onClick={() => setIsManualInput(true)}>
                   Ingresar manualmente
                 </button>
               </div>
@@ -191,15 +185,9 @@ const QRValidator = () => {
 
           {isScanning && (
               <div className="qr-scanner-container">
-                <video
-                    ref={videoRef}
-                    style={{ width: '100%', borderRadius: '10px' }}
-                />
+                <video ref={videoRef} style={{ width: "100%", borderRadius: "10px" }} />
                 <div className="scanner-controls">
-                  <button
-                      className="toggle-camera-button"
-                      onClick={toggleCamera}
-                  >
+                  <button className="toggle-camera-button" onClick={toggleCamera}>
                     Cambiar a {facingMode === "environment" ? "Frontal" : "Trasera"}
                   </button>
                   <button
@@ -211,6 +199,14 @@ const QRValidator = () => {
                   >
                     Cancelar
                   </button>
+                </div>
+                <div className="profile-item">
+                  <span className="profile-label">Estado:</span>
+                  <div className="profile-value">
+                <span style={{ color: "darkgreen" }}>
+                  Escaneando... Por favor, enfoca el código QR.
+                </span>
+                  </div>
                 </div>
               </div>
           )}
