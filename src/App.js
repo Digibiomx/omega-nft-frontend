@@ -1,6 +1,5 @@
 // src/App.js
-import { useState, useEffect, useCallback } from "react";
-import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect, useWalletClient, useChainId } from "wagmi";
+import { useState, useEffect, useCallback, useRef } from "react";import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect, useWalletClient, useChainId } from "wagmi";
 import { polygonAmoy } from "wagmi/chains";
 import { walletConnect } from "@wagmi/connectors";
 import { createPublicClient, http } from "viem";
@@ -17,53 +16,245 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import axios from 'axios';
 import "./App.css";
+import { BrowserQRCodeReader, NotFoundException, ChecksumException, FormatException } from '@zxing/library';
 
-// Nuevo componente para el validador de QR
+// Componente QRValidator
 const QRValidator = () => {
   const [qrData, setQrData] = useState("");
   const [validationResult, setValidationResult] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isManualInput, setIsManualInput] = useState(false);
+  const [error, setError] = useState(null);
+  const [facingMode, setFacingMode] = useState("environment");
+  const [showCameraOptions, setShowCameraOptions] = useState(false);
+  const videoRef = useRef(null);
+  const codeReaderRef = useRef(new BrowserQRCodeReader());
 
-  const handleValidate = async () => {
+  const handleValidate = async (data) => {
     try {
       const response = await axios.post("https://mvp-backend-3lb5.onrender.com/api/users/validate-qr", {
-        qrData: qrData,
+        qrData: data,
       });
       setValidationResult(response.data);
+      setIsScanning(false);
+      setIsManualInput(false);
+      setShowCameraOptions(false);
     } catch (error) {
       console.error("Error al validar el QR:", error);
       setValidationResult({
         valid: false,
         message: "Error al validar el QR: " + error.response?.data?.message || error.message,
       });
+      setIsScanning(false);
+      setIsManualInput(false);
+      setShowCameraOptions(false);
     }
   };
+
+  const startScanning = () => {
+    setIsScanning(true);
+    setShowCameraOptions(true);
+    setError(null);
+  };
+
+  const toggleCamera = () => {
+    setFacingMode(facingMode === "environment" ? "user" : "environment");
+    setError(null);
+  };
+
+  useEffect(() => {
+    const codeReader = codeReaderRef.current;
+
+    if (isScanning) {
+      const videoElement = videoRef.current;
+
+      const startScan = async () => {
+        try {
+          const constraints = {
+            video: {
+              facingMode: facingMode,
+            },
+          };
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          videoElement.srcObject = stream;
+          videoElement.play();
+
+          codeReader.decodeFromVideoDevice(
+              undefined,
+              videoElement,
+              (result, err) => {
+                if (result) {
+                  console.log("QR escaneado:", result.getText());
+                  setQrData(result.getText());
+                  handleValidate(result.getText());
+                  stream.getTracks().forEach(track => track.stop());
+                }
+                if (err) {
+                  if (err instanceof NotFoundException) {
+                    // No se encontró un QR, continuar escaneando
+                    return;
+                  }
+                  if (err instanceof ChecksumException || err instanceof FormatException) {
+                    console.error("Error al decodificar el QR:", err);
+                    setError("No se pudo decodificar el código QR. Asegúrate de que sea válido.");
+                    setIsScanning(false);
+                    stream.getTracks().forEach(track => track.stop());
+                    return;
+                  }
+                  console.error("Error al escanear el QR:", err);
+                  setError(`Error al escanear el QR: ${err.message || err}. Usa el modo manual como alternativa.`);
+                  setIsScanning(false);
+                  stream.getTracks().forEach(track => track.stop());
+                }
+              }
+          );
+        } catch (err) {
+          console.error("Error al acceder a la cámara:", err);
+          if (err.name === "NotAllowedError") {
+            setError("Permiso denegado para acceder a la cámara. Por favor, otorga permisos e intenta de nuevo.");
+          } else if (err.name === "NotFoundError") {
+            setError("No se encontró una cámara en el dispositivo.");
+          } else if (err.name === "NotReadableError") {
+            setError("No se pudo leer la cámara. Es posible que otra aplicación la esté usando.");
+          } else {
+            setError(`Error al acceder a la cámara: ${err.message || err}. Usa el modo manual como alternativa.`);
+          }
+          setIsScanning(false);
+        }
+      };
+
+      startScan();
+
+      return () => {
+        codeReader.reset();
+        if (videoElement && videoElement.srcObject) {
+          const stream = videoElement.srcObject;
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+    }
+  }, [isScanning, facingMode]);
 
   return (
       <section id="qr-validator">
         <h2 className="profile-title">Validador de QR</h2>
         <div className="profile-info">
-          <div className="profile-item">
-            <span className="profile-label">Datos del QR:</span>
-            <div className="profile-value">
-              <input
-                  type="text"
-                  value={qrData}
-                  onChange={(e) => setQrData(e.target.value)}
-                  className="email-input"
-                  placeholder="Pega los datos del QR aquí"
-              />
-              <button className="save-button" onClick={handleValidate}>
-                Validar
-              </button>
-            </div>
-          </div>
+          {!isScanning && !isManualInput && !showCameraOptions && (
+              <div className="profile-item">
+                <button
+                    className="scan-button"
+                    onClick={startScanning}
+                >
+                  Validar QR
+                </button>
+                <button
+                    className="manual-button"
+                    onClick={() => setIsManualInput(true)}
+                >
+                  Ingresar manualmente
+                </button>
+              </div>
+          )}
+
+          {showCameraOptions && !isScanning && (
+              <div className="profile-item">
+                <span className="profile-label">Selecciona la cámara:</span>
+                <div className="profile-value">
+                  <button
+                      className="scan-button"
+                      onClick={() => {
+                        setFacingMode("environment");
+                        setIsScanning(true);
+                      }}
+                  >
+                    Cámara trasera
+                  </button>
+                  <button
+                      className="scan-button"
+                      onClick={() => {
+                        setFacingMode("user");
+                        setIsScanning(true);
+                      }}
+                  >
+                    Cámara frontal
+                  </button>
+                  <button
+                      className="cancel-button"
+                      onClick={() => setShowCameraOptions(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+          )}
+
+          {isScanning && (
+              <div className="qr-scanner-container">
+                <video
+                    ref={videoRef}
+                    style={{ width: '100%', borderRadius: '10px' }}
+                />
+                <div className="scanner-controls">
+                  <button
+                      className="toggle-camera-button"
+                      onClick={toggleCamera}
+                  >
+                    Cambiar a {facingMode === "environment" ? "Frontal" : "Trasera"}
+                  </button>
+                  <button
+                      className="cancel-button"
+                      onClick={() => {
+                        setIsScanning(false);
+                        setShowCameraOptions(false);
+                      }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+          )}
+
+          {isManualInput && (
+              <div className="profile-item">
+                <span className="profile-label">Datos del QR:</span>
+                <div className="profile-value">
+                  <input
+                      type="text"
+                      value={qrData}
+                      onChange={(e) => setQrData(e.target.value)}
+                      className="email-input"
+                      placeholder="Pega los datos del QR aquí"
+                  />
+                  <button className="save-button" onClick={() => handleValidate(qrData)}>
+                    Validar
+                  </button>
+                  <button
+                      className="cancel-button"
+                      onClick={() => setIsManualInput(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+          )}
+
+          {error && (
+              <div className="profile-item">
+                <span className="profile-label">Error:</span>
+                <div className="profile-value">
+                  <span style={{ color: "red" }}>{error}</span>
+                </div>
+              </div>
+          )}
+
           {validationResult && (
               <div className="profile-item">
                 <span className="profile-label">Resultado:</span>
                 <div className="profile-value">
-                            <span style={{ color: validationResult.valid ? "green" : "red" }}>
-                                {validationResult.message}
-                            </span>
+              <span style={{ color: validationResult.valid ? "green" : "red" }}>
+                {validationResult.message}
+              </span>
                 </div>
               </div>
           )}

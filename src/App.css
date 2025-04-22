@@ -695,6 +695,66 @@ body {
   }
 }
 
+/* QR Validator Section */
+.qr-scanner-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #ffffff; /* Fondo blanco para el escáner */
+}
+
+.scanner-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.toggle-camera-button {
+  background: linear-gradient(135deg, #6666ff 0%, #3333cc 100%); /* Color diferente para el botón de cambiar cámara */
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-camera-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
+}
+
+.scan-button,
+.manual-button,
+.cancel-button {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 10px 5px;
+}
+
+.scan-button:hover,
+.manual-button:hover,
+.cancel-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 170, 255, 0.4);
+}
+
+.cancel-button {
+  background: linear-gradient(135deg, #ff5555 0%, #cc4444 100%); /* Color diferente para "Cancelar" */
+}
+
 /* Media Queries para móviles */
 @media (max-width: 768px) {
   .navbar {
@@ -911,10 +971,10 @@ body {
 }
 
 .profile-value span {
-  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
-  overflow: hidden; /* Oculta el texto que no cabe */
-  text-overflow: ellipsis; /* Añade puntos suspensivos al final */
-  max-width: 200px; /* Ajusta este valor según el diseño */
+  /*white-space: nowrap;  Evita que el texto se divida en varias líneas */
+  /*overflow: hidden;  Oculta el texto que no cabe */
+  /*text-overflow: ellipsis;  Añade puntos suspensivos al final */
+  max-width: 800px; /* Ajusta este valor según el diseño */
 }
 
 .copy-button,
@@ -1241,5 +1301,21 @@ body {
   .card-front,
   .card-back {
     padding: 10px; /* Reducir el padding en móviles */
+  }
+
+  .qr-scanner-container {
+    max-width: 300px;
+  }
+
+  .toggle-camera-button {
+    font-size: 0.9rem;
+    padding: 8px 15px;
+  }
+
+  .scan-button,
+  .manual-button,
+  .cancel-button {
+    font-size: 0.9rem;
+    padding: 8px 15px;
   }
 }
